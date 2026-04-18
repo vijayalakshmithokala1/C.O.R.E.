@@ -7,6 +7,7 @@ import ChatBox from '../components/ChatBox';
 export default function Dashboard({ user, onLogout, apiBase }) {
   const [activeTab, setActiveTab] = useState('summarizer'); 
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [docResult, setDocResult] = useState(null);
   const [uploadStep, setUploadStep] = useState(-1);
@@ -275,9 +276,18 @@ export default function Dashboard({ user, onLogout, apiBase }) {
 
   return (
     <div className="app-layout">
-      <Sidebar user={user} activeNav={activeNav} recentDocs={recentDocs} onLoadDoc={(doc) => { setActiveNav('dashboard'); loadRecentDoc(doc); }} onNavChange={(nav) => { setActiveNav(nav); setCompareResult(null); setResearchResult(null); }} />
+      {isSidebarOpen && <div className="mobile-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+      <Sidebar 
+        user={user} 
+        activeNav={activeNav} 
+        recentDocs={recentDocs} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onLoadDoc={(doc) => { setActiveNav('dashboard'); loadRecentDoc(doc); setIsSidebarOpen(false); }} 
+        onNavChange={(nav) => { setActiveNav(nav); setCompareResult(null); setResearchResult(null); setIsSidebarOpen(false); }} 
+      />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
-        <Navbar user={user} onLogout={onLogout} onSettings={() => setActiveNav('settings')} />
+        <Navbar user={user} onLogout={onLogout} onSettings={() => setActiveNav('settings')} onMenuClick={() => setIsSidebarOpen(true)} />
         <div style={{ maxWidth: 900, width: '100%', margin: '0 auto', padding: '2.5rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div className="fade-up" style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Playfair Display, serif' }}>Welcome back, {user?.name?.split(' ')[0]} 👋</h2>

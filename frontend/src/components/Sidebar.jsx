@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
 
-export default function Sidebar({ user, activeNav = 'dashboard', recentDocs = [], onLoadDoc, onNavChange }) {
+export default function Sidebar({ user, activeNav = 'dashboard', recentDocs = [], isOpen = false, onClose, onLoadDoc, onNavChange }) {
   const [showRecent, setShowRecent] = useState(false);
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-        <h1 className="logo-text" style={{ fontSize: '1.5rem', lineHeight: 1 }}>
-          SmartLaw
-        </h1>
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      {/* Logo and Mobile Close */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <h1 className="logo-text" style={{ fontSize: '1.5rem', lineHeight: 1 }}>
+            SmartLaw
+          </h1>
+        </div>
+        {onClose && (
+          <button 
+            className="mobile-menu-btn" 
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer', padding: '0.25rem' }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '99px', padding: '4px 10px', width: 'fit-content' }}>

@@ -1,10 +1,19 @@
 import React from 'react';
 import Dropdown from './Dropdown';
 
-export default function Navbar({ user, onLogout, onSettings }) {
+export default function Navbar({ user, onLogout, onSettings, onMenuClick }) {
   return (
     <nav className="navbar" style={{ padding: '0 2rem', background: 'transparent', borderBottom: 'none' }}>
-      <div style={{ flex: 1 }}></div>
+      {onMenuClick && (
+        <button 
+          className="mobile-menu-btn" 
+          onClick={onMenuClick}
+          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '1.5rem', cursor: 'pointer', padding: '0.25rem' }}
+        >
+          ☰
+        </button>
+      )}
+      <div className="desktop-only" style={{ flex: 1 }}></div>
 
       {/* Right — User info + Dropdowns */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>

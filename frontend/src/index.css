@@ -538,7 +538,38 @@ code {
 }
 
 /* ── Responsive ──────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  
+  .sidebar {
+    position: fixed;
+    top: 0; left: -100%; bottom: 0;
+    width: 280px;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { left: 0; }
+
+  .mobile-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    animation: fadeIn 0.3s forwards;
+  }
+
+  .desktop-only { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
+  
+  .navbar { padding: 0 1rem !important; }
   .upload-zone { padding: 2rem 1rem; }
   .chat-bubble-user, .chat-bubble-ai { max-width: 95%; }
+  
+  .glass-card { padding: 1rem !important; }
+  main > div { padding: 1rem 0.5rem !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu-btn { display: none !important; }
 }
