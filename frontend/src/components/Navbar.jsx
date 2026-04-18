@@ -69,7 +69,6 @@ export default function Navbar({ user, onLogout, onMenuClick }) {
             <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{user?.name}</p>
             <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user?.email}</p>
           </div>
-          <button className="dropdown-item" onClick={() => window.location.href='/db-explorer'}>🔬 Evaluation Mode</button>
           <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }}></div>
           <button className="dropdown-item danger" onClick={onLogout}>🚪 Sign Out</button>
         </Dropdown>

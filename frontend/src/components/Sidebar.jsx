@@ -89,19 +89,6 @@ export default function Sidebar({ user, activeNav = 'dashboard', recentDocs = []
           </div>
         )}
 
-        {user?.isAdmin && (
-          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem', paddingLeft: '0.75rem' }}>Admin Tools</p>
-            <a 
-              href="/db-explorer" 
-              className="sidebar-link" 
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <span>🔬</span> Evaluator Hub
-            </a>
-          </div>
-        )}
-
       </nav>
 
       {/* Bottom Info */}
