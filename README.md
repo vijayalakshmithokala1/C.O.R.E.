@@ -60,7 +60,7 @@ C.O.R.E. bridges the gap by turning every smartphone into an emergency hotline t
 |-------|-----------|
 | Frontend | React 19, Vite, React Router v7 |
 | Backend | Node.js, Express v5 |
-| Database | PostgreSQL via **Supabase** |
+| Database | PostgreSQL via **Neon** |
 | ORM | Prisma |
 | Real-time | Socket.io v4 |
 | Auth | JWT (jsonwebtoken) + bcryptjs |
@@ -114,7 +114,7 @@ Solution challenge/
 
 ### Prerequisites
 - Node.js 18+
-- A [Supabase](https://supabase.com) project (free tier works)
+- A [Neon](https://neon.tech) project (free tier works)
 
 ### 1. Clone & Install
 
@@ -134,15 +134,15 @@ cd ../client && npm install
 **`server/.env`**
 ```env
 PORT=5000
-DATABASE_URL="postgresql://postgres.[ref]:[password]@...pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.[ref]:[password]@...pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://user:password@ep-xxx-yyy.us-east-2.aws.neon.tech/neondb?sslmode=require"
+DIRECT_URL="postgresql://user:password@ep-xxx-yyy.us-east-2.aws.neon.tech/neondb?sslmode=require"
 JWT_SECRET="your-strong-secret-here"
 CLIENT_URL="http://localhost:5173"
 ```
 
-> Get your Supabase connection strings from:  
-> **Supabase Dashboard → Project Settings → Database → Connection String**  
-> Use **Transaction** mode (port `6543`) for `DATABASE_URL` and **Session** mode (port `5432`) for `DIRECT_URL`.
+> Get your Neon connection string from:  
+> **Neon Dashboard → Project → Connection Details**  
+> (Use the same connection string for both `DATABASE_URL` and `DIRECT_URL`)
 
 **`client/.env`**
 ```env
