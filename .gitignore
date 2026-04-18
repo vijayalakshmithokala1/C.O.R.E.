@@ -1,0 +1,32 @@
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# 📂 Databases
+*.db
+*.sqlite3
+
+# 🧪 Temporary & Test Files
+temp_uploads/
+uploads/
+verify_db.py
+repro_multi_upload.py
+test_ai.py
+test_endpoints.py
+verify_temp.py
+test_doc.doc
+
+# ⚛️ React / Node
+node_modules/
+dist/
+.DS_Store
+*.local
+
+# 📁 IDEs
+.vscode/
+.idea/
