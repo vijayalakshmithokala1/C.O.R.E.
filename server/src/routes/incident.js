@@ -59,15 +59,6 @@ router.post('/', upload.single('media'), async (req, res) => {
 
     // 1. Immediate notification (already done above)
     
-    // 2. Immediate Buzz for Fire incidents
-    if (type === 'Fire') {
-      const firePayload = {
-        message: `CRITICAL FIRE ALERT: Smoke/Fire reported at ${floor || 'UNKNOWN LOCATION'}. Evacuate immediately!`,
-        issuerData: { name: 'SYSTEM', role: 'Auto-Fire' }
-      };
-      req.io.to(`staff_all_${session.domain}`).emit('emergency_buzz', firePayload);
-      req.io.to(`patients_${session.domain}`).emit('emergency_buzz', firePayload);
-    }
 
     // 3. Auto-escalation: If ANY incident is not reviewed (remains Pending) in 2 minutes, trigger system-wide emergency buzz
     setTimeout(async () => {
