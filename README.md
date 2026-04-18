@@ -1,6 +1,6 @@
 # 🏛️ SmartLaw: Production-Grade Legal AI Platform
 
-SmartLaw analyzes legal documents, detects risks, and generates actionable insights—while ensuring sensitive personal data is never exposed to AI models.
+SmartLaw analyzes legal documents, detects risks, and generates actionable insights—while designed so that sensitive personal data is not exposed to AI models.
 
 ## 🌐 Live Deployment
 
@@ -13,13 +13,29 @@ SmartLaw analyzes legal documents, detects risks, and generates actionable insig
 
 ---
 
-SmartLaw is a secure, production-ready legal document management and analysis platform. It leverages state-of-the-art AI (Llama 3.3) to provide deep legal insights while ensuring strict privacy through an advanced PII redaction and cloud-storage pipeline.
+## 🎥 Video Demo
+*(Placeholder: 1-2 min Loom / YouTube demo showcasing the end-to-end flow)*
+
+---
+
+## 🧪 Quick Demo Guide
+1. **Register/Login** via the frontend app.
+2. **Upload a sample document** (You can use any standard NDA or employment contract PDF).
+3. **Click "Analyze"** to process the document.
+4. **Try the features**:
+   - **Risk Audit**: Check the clause-level issues.
+   - **Summary**: Read the plain-English explanation.
+   - **Chat**: Ask specific questions about the document context.
+
+---
+
+SmartLaw is a secure legal document management and analysis platform. It leverages state-of-the-art AI (Llama 3.3) to provide deep legal insights while designed to ensure strict privacy through an advanced PII redaction and cloud-storage pipeline.
 
 ---
 
 ## 🌟 Project Highlights (Strengths)
 1. **💎 Strong Core Idea**: Solves a real legal-tech problem with privacy-first AI inference (custom PII redaction + client-side restoration).
-2. **🏗️ Production-Ready Architecture**: Dockerized backend, Gunicorn server, PostgreSQL production database, Cloudinary object storage, and separated frontend/backend deployments.
+2. **🏗️ Distributed Architecture**: Dockerized backend, Gunicorn server, PostgreSQL production database, Cloudinary object storage, and separated frontend/backend deployments.
 3. **⚡ Clean Architecture Separation**: Highly modular backend setup (`routes/` for API, `services/` for business logic, independent OCR/AI logic).
 4. **🧠 Feature Depth**: Goes far beyond simple ChatGPT wrappers—delivers page-referenced risk auditing, actionable to-do generation, and targeted legal chat.
 
@@ -30,6 +46,7 @@ Legal documents contain highly sensitive identifiers (Aadhaar, PAN, etc.). Smart
 - **Anonymized Inference**: PII is redacted before being sent to AI services. Sensitive identifiers are replaced with anonymous tokens.
 - **Secure Processing**: Documents are temporarily processed in a secure backend environment for extraction and OCR.
 - **Client-Side Restoration**: **PII mapping never leaves the browser and is not persisted server-side.** It remains strictly in the browser's volatile memory, enabling the UI to safely restore real values without the server or AI provider ever seeing them.
+  - *(Technical Validation: The PII map is stored in React state only and is not persisted to storage. The backend never receives the original text after redaction.)*
 
 ### 📄 How It Works (Concrete Example)
 **1. Original Document (Uploaded):**
@@ -41,7 +58,7 @@ Legal documents contain highly sensitive identifiers (Aadhaar, PAN, etc.). Smart
 **3. Restored on Frontend (Browser UI):**
 > *Client PAN is ABCDE1234F.*
 
-This ensures your clients' sensitive information is never memorized or trained upon by external LLMs.
+This architecture is designed to ensure your clients' sensitive information is never memorized or trained upon by external LLMs.
 
 ---
 
@@ -83,9 +100,11 @@ This ensures your clients' sensitive information is never memorized or trained u
 ## 📸 Implementation Screenshots
 
 ### Dashboard
+*Dashboard overview displaying active legal documents and their basic metrics.*
 <img src="frontend/src/assets/dashboard.png" alt="Dashboard Screenshot" width="100%"/>
 
 ### Risk Audit & PII Redaction
+*Risk audit highlighting clause-level issues with a PII redaction preview before AI processing.*
 <img src="frontend/src/assets/analysis.png" alt="Analysis Screenshot" width="100%"/>
 
 ---
@@ -96,12 +115,24 @@ This ensures your clients' sensitive information is never memorized or trained u
 - **Format Support**: PDF, DOCX, and Image-based documents (JPG/PNG).
 - **Extraction**: Hybrid extraction using `pdfplumber` and `PyPDF2` fallback.
 - **OCR Engine**: Tesseract-driven OCR for scanned legal papers.
+- **Error Handling**: Graceful fallback and user feedback implemented for OCR or AI failures.
 
 ### 2. **Professional Legal AI Suite**
 - **Risk Auditor**: Specialized AI persona that identifies harmful clauses and cites exact page numbers.
 - **Summarizer**: Explains complex legal jargon in "chai-side" plain English.
 - **Action Items**: Concrete, actionable To-Do checklists extracted from agreements.
 - **Legal Chat**: Context-aware Q&A based on the uploaded document context.
+
+---
+
+## 📡 API Overview
+
+A highly modular REST API powers the platform. Key endpoints include:
+
+- `POST /auth/register` - Create a new secured user account
+- `POST /auth/login` - Authenticate and receive a JWT
+- `POST /documents/upload` - Securely upload and process a legal document
+- `GET /documents/<id>` - Retrieve document analysis and metadata
 
 ---
 
@@ -131,8 +162,8 @@ SmartLaw/
 ---
 
 ## 📊 Performance Metrics
-- **Average OCR Time**: ~3–5 seconds per page (varies by server load).
-- **Average AI Response**: ~2–4 seconds per query (powered by ultra-fast Groq Llama 3.3).
+- **Average OCR Time**: ~3–5 seconds per page *(Observed on Render free tier during testing)*.
+- **Average AI Response**: ~2–4 seconds per query *(Observed on Render free tier during testing)*.
 - **Capacity limits**: Up to 20 pages per document per request.
 
 ---
@@ -169,10 +200,13 @@ To deploy successfully, ensure the following variables are set:
 - OCR performance depends on server resources and may be slower on free-tier deployments.
 - Large documents (>10MB) are restricted to ensure system stability.
 - "Cold starts" on Render free tier may introduce initial request latency.
+- **Production Reliability**: Currently lacks an automated CI/CD pipeline, and comprehensive unit/integration tests are still pending.
+- **Monitoring**: No centralized error monitoring (e.g., Sentry) or explicit rate-limiting middleware is present in this iteration.
 
 ---
 
 ## 🚧 Future Enhancements
+- **Strict Typing & Refactoring**: Migrate frontend to TypeScript and decouple large service classes.
 - **Async Processing**: Background job queue (Celery/RQ) for long-running OCR and AI tasks.
 - **Access Control**: Role-based Access Control (RBAC) for legal teams.
 - **Encryption**: End-to-end encryption for stored documents.
