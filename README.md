@@ -82,10 +82,11 @@ This ensures your clients' sensitive information is never memorized or trained u
 
 ## 📸 Implementation Screenshots
 
-*(Add your actual screenshots to your repository and link them here before your presentation!)*
+### Dashboard
+<img src="frontend/src/assets/dashboard.png" alt="Dashboard Screenshot" width="100%"/>
 
-- **Dashboard:** `![Dashboard Screenshot](./frontend/src/assets/dashboard.png)`
-- **Risk Audit & PII Redaction:** `![Analysis Screenshot](./frontend/src/assets/analysis.png)`
+### Risk Audit & PII Redaction
+<img src="frontend/src/assets/analysis.png" alt="Analysis Screenshot" width="100%"/>
 
 ---
 
