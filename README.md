@@ -1,5 +1,13 @@
 # 🏛️ SmartLaw: Production-Grade Legal AI Platform
 
+## ❗ Problem Statement
+Legal professionals handle highly sensitive documents containing personal identifiers (PAN, Aadhaar, etc.).
+Existing AI tools can expose this data to external models, creating serious privacy risks.
+
+
+## 💡 Solution
+SmartLaw introduces a privacy-first AI pipeline that redacts sensitive information before inference and restores it securely on the client side.
+
 SmartLaw analyzes legal documents, detects risks, and generates actionable insights—while designed so that sensitive personal data is not exposed to AI models.
 
 ## 🌐 Live Deployment
