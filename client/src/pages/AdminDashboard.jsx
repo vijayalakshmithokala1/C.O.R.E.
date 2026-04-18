@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDomain } from '../context/DomainContext';
+import API_BASE from '../utils/api';
 
 export default function AdminDashboard({ section, user }) {
   const [data, setData] = useState(null);
@@ -26,7 +27,7 @@ export default function AdminDashboard({ section, user }) {
         if (section === 'audit') endpoint = '/api/admin/audit';
         if (section === 'settings') endpoint = '/api/admin/config';
 
-        const res = await fetch(`http://localhost:5000${endpoint}`, {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const json = await res.json();
@@ -53,7 +54,7 @@ export default function AdminDashboard({ section, user }) {
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/admin/staff', {
+      const res = await fetch(`${API_BASE}/api/admin/staff`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -77,7 +78,7 @@ export default function AdminDashboard({ section, user }) {
   const handleUpdateConfig = async (e) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:5000/api/admin/config', {
+      await fetch(`${API_BASE}/api/admin/config`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ export default function AdminDashboard({ section, user }) {
   const handleDeleteStaff = async (id) => {
     if(!window.confirm('Delete this staff member?')) return;
     try {
-      await fetch(`http://localhost:5000/api/admin/staff/${id}`, {
+      await fetch(`${API_BASE}/api/admin/staff/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
