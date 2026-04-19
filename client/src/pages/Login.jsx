@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { useDomain } from '../context/DomainContext';
+import API_BASE from '../utils/api';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -19,7 +20,7 @@ export default function Login() {
     // Quick switch to setup mode if needed (Demo purposes: if login fails normally on fresh install, user can create admin)
     if (isSetupMode) {
       try {
-        const res = await fetch('http://localhost:5000/api/auth/setup-admin', {
+        const res = await fetch(`${API_BASE}/api/auth/setup-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password, name: isHotel ? 'Hotel Admin' : 'System Admin', domain })
@@ -37,7 +38,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role, domain })

@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QrCode, UserCheck, UserMinus, Download, Printer, X, Clock, CheckCircle, Users } from 'lucide-react';
 import { useDomain } from '../context/DomainContext';
+import API_BASE from '../utils/api';
 
-// Helper to generate portal URL
+// Helper to generate portal URL — uses the same origin in production
 const getPortalUrl = (sessionId) =>
-  `${window.location.protocol}//${window.location.hostname}:5173/portal/${sessionId}`;
+  `${window.location.origin}/portal/${sessionId}`;
 
 export default function ReceptionDashboard({ socket, user }) {
   const [sessions, setSessions] = useState([]);
@@ -17,7 +18,7 @@ export default function ReceptionDashboard({ socket, user }) {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/session/sessions', {
+      const res = await fetch(`${API_BASE}/api/session/sessions`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await res.json();
@@ -43,7 +44,7 @@ export default function ReceptionDashboard({ socket, user }) {
   const handleCheckIn = async () => {
     setCheckingIn(true);
     try {
-      const res = await fetch('http://localhost:5000/api/session/checkin', {
+      const res = await fetch(`${API_BASE}/api/session/checkin`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -60,7 +61,7 @@ export default function ReceptionDashboard({ socket, user }) {
   const handleDischarge = async (id) => {
     if (!window.confirm(`Discharge this ${terms.patient.toLowerCase()}? Their QR code will immediately deactivate.`)) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/session/discharge/${id}`, {
+      const res = await fetch(`${API_BASE}/api/session/discharge/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });

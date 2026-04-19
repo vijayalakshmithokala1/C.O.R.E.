@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert } from 'lucide-react';
 import { playIncidentAlarm, unlockAudio } from '../utils/alarm';
 import { useDomain } from '../context/DomainContext';
+import API_BASE from '../utils/api';
 
 export default function MedicalDashboard({ socket, user }) {
   const [incidents, setIncidents] = useState([]);
@@ -22,7 +23,7 @@ export default function MedicalDashboard({ socket, user }) {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch('http://localhost:5000/api/incident', {
+      const res = await fetch(`${API_BASE}/api/incident`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -78,7 +79,7 @@ export default function MedicalDashboard({ socket, user }) {
   // ── Update status ──────────────────────────────────────────────
   const updateStatus = async (id, status) => {
     try {
-      await fetch(`http://localhost:5000/api/incident/${id}/status`, {
+      await fetch(`${API_BASE}/api/incident/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +276,7 @@ function IncidentCard({ incident, onStatusChange, typeColor, isHotel }) {
       {incident.uploadedMediaUrl && (
         <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--panel-border)' }}>
           <a
-            href={`http://localhost:5000${incident.uploadedMediaUrl}`}
+            href={`${API_BASE}${incident.uploadedMediaUrl}`}
             target="_blank"
             rel="noreferrer"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--accent-blue)' }}

@@ -18,6 +18,7 @@ import {
   Loader,
 } from 'lucide-react';
 import { playEmergencyBuzzAlarm, stopEmergencyBuzzAlarm, unlockAudio } from '../utils/alarm';
+import API_BASE from '../utils/api';
 
 // Haversine formula — distance between two GPS points in metres
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -89,7 +90,7 @@ export default function PatientPortal() {
 
   // ─── Socket connection ──────────────────────────────────────────
   useEffect(() => {
-    const socket = io('http://localhost:5000', { transports: ['websocket'] });
+    const socket = io(API_BASE, { transports: ['websocket'] });
     socketRef.current = socket;
 
     // Unlock AudioContext on first user tap (mobile-friendly)
@@ -131,7 +132,7 @@ export default function PatientPortal() {
 
   // ─── Load session + config ─────────────────────────────────────
   useEffect(() => {
-    fetch(`http://localhost:5000/api/session/session/${sessionId}`)
+    fetch(`${API_BASE}/api/session/session/${sessionId}`)
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
@@ -139,7 +140,7 @@ export default function PatientPortal() {
       .then((data) => {
         setSession(data);
         // Also fetch config with correct domain
-        fetch(`http://localhost:5000/api/session/config?domain=${data.domain}`)
+        fetch(`${API_BASE}/api/session/config?domain=${data.domain}`)
           .then((r) => r.json())
           .then((cfg) => setConfig(cfg))
           .catch(() => setConfig({ geofenceLat: 0, geofenceLng: 0, geofenceRadius: 0 }));
@@ -206,7 +207,7 @@ export default function PatientPortal() {
     if (file) fd.append('media', file);
 
     try {
-      const res = await fetch('http://localhost:5000/api/incident', { method: 'POST', body: fd });
+      const res = await fetch(`${API_BASE}/api/incident`, { method: 'POST', body: fd });
       if (res.ok) {
         setStep('success');
       } else {

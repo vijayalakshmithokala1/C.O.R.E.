@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom'
 import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle } from 'lucide-react';
 import io from 'socket.io-client';
 import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
+import API_BASE from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { useDomain } from '../context/DomainContext';
 
@@ -29,7 +30,7 @@ export default function Dashboard() {
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
 
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(API_BASE);
     setSocket(newSocket);
 
     // Unlock audio on first user interaction
