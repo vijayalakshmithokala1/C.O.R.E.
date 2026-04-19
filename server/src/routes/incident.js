@@ -90,7 +90,7 @@ router.post('/', upload.single('media'), async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   const { role, floors, domain } = req.user;
   
-  let filter = { domain, isDeleted: false }; // ALWAYS filter by domain and exclude deleted
+  let filter = { domain, isDeleted: false, status: { not: 'Resolved' } }; // ALWAYS filter by domain, exclude deleted, and exclude Resolved from feed
 
   if (role === 'Doctor' || role === 'Nurse' || role === 'Security' || role === 'Maintenance') {
     // Parse assigned floors
@@ -130,20 +130,15 @@ router.get('/', authenticateToken, async (req, res) => {
 // Update Incident Status (Staff Only)
 router.put('/:id/status', authenticateToken, async (req, res) => {
   const { status } = req.body;
-  
-  const updateData = { status };
-  if (status === 'Resolved') {
-    updateData.isDeleted = true;
-  }
 
   const incident = await prisma.incident.update({
     where: { id: parseInt(req.params.id) },
-    data: updateData,
+    data: { status },
     include: { session: { select: { sessionCode: true } } }
   });
 
   // Broadcast update
-  if (updateData.isDeleted) {
+  if (status === 'Resolved') {
     req.io.to(`staff_all_${incident.domain}`).emit('incident_updated', { ...incident, removed: true });
   } else {
     req.io.to(`staff_all_${incident.domain}`).emit('incident_updated', incident);
@@ -152,7 +147,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   await prisma.auditLog.create({
     data: {
       action: 'Update Incident',
-      details: `Incident ID ${incident.id} changed to ${status}${updateData.isDeleted ? ' and archived' : ''}`,
+      details: `Incident ID ${incident.id} changed to ${status}`,
       userId: req.user.id
     }
   });
