@@ -259,7 +259,8 @@ export default function ReceptionDashboard({ socket, user }) {
             {sessions.map((s) => (
               <tr key={s.id} style={{ opacity: s.active ? 1 : 0.55 }}>
                 <td className="mono" style={{ fontWeight: 600 }}>
-                  <div style={{ color: 'var(--text-main)' }}>{s.name || 'Anonymous'}</div>
+                  {s.name && <div style={{ color: 'var(--text-main)' }}>{s.name}</div>}
+                  {!s.name && <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Pending Name</div>}
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.sessionCode}</div>
                 </td>
                 <td>
