@@ -254,6 +254,11 @@ function IncidentCard({ incident, onStatusChange, onDelete, user, typeColor, isH
               <span style={{ fontFamily: 'var(--font-mono)' }}>
                 {incident.session?.sessionCode || 'UNKNOWN'}
               </span>
+              {incident.assignedToName && (
+                <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>
+                  Assigned: {incident.assignedToName}
+                </span>
+              )}
             </div>
           </div>
         </div>
