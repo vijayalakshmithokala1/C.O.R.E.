@@ -26,6 +26,7 @@ export default function AdminDashboard({ section, user }) {
         if (section === 'staff') endpoint = '/api/admin/staff';
         if (section === 'audit') endpoint = '/api/admin/audit';
         if (section === 'settings') endpoint = '/api/admin/config';
+        if (section === 'analytics') endpoint = '/api/admin/analytics';
 
         const res = await fetch(`${API_BASE}${endpoint}`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -137,7 +138,7 @@ export default function AdminDashboard({ section, user }) {
                   </>
                 )}
               </select>
-              {(role === 'Doctor' || role === 'Nurse' || role === 'Maintenance' || role === 'Security') && (
+              {(role === 'Doctor' || role === 'Nurse' || role === 'Receptionist' || role === 'Maintenance' || role === 'Security') && (
                 <input type="text" placeholder="Assigned Floors (comma separated, e.g. Floor 1, Floor 2)" value={floors} onChange={e=>setFloors(e.target.value)} style={{ gridColumn: '1 / -1' }} />
               )}
               <button type="submit" className="primary" style={{ gridColumn: '1 / -1' }}>Create Staff Account</button>
@@ -221,6 +222,53 @@ export default function AdminDashboard({ section, user }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </>
+      )}
+
+      {section === 'analytics' && data && (
+        <>
+          <h1 style={{ marginBottom: '2rem' }}>Performance Analytics</h1>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <div className="panel" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{data.totalIncidents}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Total Incidents</div>
+            </div>
+            <div className="panel" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)' }}>{data.avgResponseTimeSeconds}s</div>
+              <div style={{ color: 'var(--text-muted)' }}>Avg. Response Time</div>
+            </div>
+            <div className="panel" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-amber)' }}>{data.activeStaff}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Active Staff Load</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+             <div className="panel">
+                <h3>Incidents by Type</h3>
+                <div style={{ marginTop: '1rem' }}>
+                  {data.incidentsByType?.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--panel-border)' }}>
+                      <span>{item.name}</span>
+                      <span style={{ fontWeight: 'bold' }}>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+             </div>
+             
+             <div className="panel">
+                <h3>Incidents by Status</h3>
+                <div style={{ marginTop: '1rem' }}>
+                  {data.incidentsByStatus?.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--panel-border)' }}>
+                      <span>{item.name}</span>
+                      <span className={`tag status-${item.name.replace(' ', '')}`}>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+             </div>
           </div>
         </>
       )}

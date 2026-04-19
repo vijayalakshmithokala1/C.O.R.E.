@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, Phone } from 'lucide-react';
+import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, Camera, BarChart2, CheckCircle, X, Phone } from 'lucide-react';
 import io from 'socket.io-client';
 import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
 import API_BASE from '../utils/api';
@@ -16,10 +16,13 @@ export default function Dashboard() {
   const [socket, setSocket] = useState(null);
   const [emergencyActive, setEmergencyActive] = useState(false);
   const [emergencyAlertMsg, setEmergencyAlertMsg] = useState(null);
+  const [claimedAlertMsg, setClaimedAlertMsg] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { terms, domain } = useDomain();
+
+  const [simulatingCamera, setSimulatingCamera] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -56,6 +59,12 @@ export default function Dashboard() {
       playEmergencyBuzzAlarm();
     });
 
+    // Staff see when someone else claims an incident
+    newSocket.on('incident_claimed', (data) => {
+      setClaimedAlertMsg(data.message);
+      setTimeout(() => setClaimedAlertMsg(null), 8000); // clear after 8 seconds
+    });
+
     return () => {
       newSocket.close();
       stopEmergencyBuzzAlarm();
@@ -80,6 +89,27 @@ export default function Dashboard() {
     }
   }
 
+  const triggerCameraAlert = async () => {
+    setSimulatingCamera(true);
+    try {
+       await fetch(`${API_BASE}/api/incident/system-alert`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+            domain: user.domain,
+            cameraLocation: 'Lobby',
+            eventType: 'Fire',
+            confidence: 82
+         })
+       });
+       alert('AI Camera detection triggered successfully.');
+    } catch(e) {
+       console.error(e);
+    } finally {
+       setSimulatingCamera(false);
+    }
+  };
+
   if (!user) return <div className="auth-wrapper"><h2 className="auth-title">Connecting...</h2></div>;
 
   return (
@@ -103,6 +133,23 @@ export default function Dashboard() {
               ✓ Acknowledge & Mute
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── Claimed Notification Toast ── */}
+      {claimedAlertMsg && (
+        <div style={{
+           position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999,
+           background: '#3b82f6', color: 'white', padding: '1rem 1.5rem',
+           borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+           display: 'flex', alignItems: 'center', gap: '0.75rem',
+           animation: 'slideIn 0.3s ease-out'
+        }}>
+           <CheckCircle size={20} />
+           <div>{claimedAlertMsg}</div>
+           <button onClick={() => setClaimedAlertMsg(null)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 0, marginLeft: '0.5rem' }}>
+              <X size={16} />
+           </button>
         </div>
       )}
 
@@ -135,6 +182,9 @@ export default function Dashboard() {
               </Link>
               <Link to="/dashboard/audit" className={`nav-link ${location.pathname === '/dashboard/audit' ? 'active' : ''}`}>
                 <Shield size={18} /> Audit Logs
+              </Link>
+              <Link to="/dashboard/analytics" className={`nav-link ${location.pathname === '/dashboard/analytics' ? 'active' : ''}`}>
+                <BarChart2 size={18} /> Analytics
               </Link>
             </>
           )}
@@ -184,6 +234,12 @@ export default function Dashboard() {
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
 
+          {(user.role === 'Security' || user.role === 'Administrator' || user.role === 'Hotel Manager') && (
+            <button style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', backgroundColor: '#3b82f6', color: 'white' }} onClick={triggerCameraAlert} disabled={simulatingCamera}>
+              <Camera size={18} /> Simulate AI Camera
+            </button>
+          )}
+
           <button className="danger" style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }} onClick={sendEmergencyBuzz}>
             <AlertTriangle size={18} /> 🚨 Send Emergency Alert
           </button>
@@ -201,6 +257,7 @@ export default function Dashboard() {
           <Route path="/staff" element={<AdminDashboard section="staff" user={user} />} />
           <Route path="/settings" element={<AdminDashboard section="settings" user={user} />} />
           <Route path="/audit" element={<AdminDashboard section="audit" user={user} />} />
+          <Route path="/analytics" element={<AdminDashboard section="analytics" user={user} />} />
         </Routes>
       </main>
     </div>

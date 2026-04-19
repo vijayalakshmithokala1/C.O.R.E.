@@ -113,4 +113,48 @@ router.put('/config', async (req, res) => {
   res.json(config);
 });
 
+router.get('/analytics', async (req, res) => {
+  // Aggregate incident stats
+  const totalIncidents = await prisma.incident.count({ where: { domain: req.user.domain } });
+  
+  const incidentsByTypeData = await prisma.incident.groupBy({
+    by: ['type'],
+    where: { domain: req.user.domain },
+    _count: { type: true }
+  });
+  const incidentsByType = incidentsByTypeData.map(item => ({ name: item.type, count: item._count.type }));
+
+  const incidentsByStatusData = await prisma.incident.groupBy({
+    by: ['status'],
+    where: { domain: req.user.domain },
+    _count: { status: true }
+  });
+  const incidentsByStatus = incidentsByStatusData.map(item => ({ name: item.status, count: item._count.status }));
+
+  // Average response time calculation
+  const resolvedIncidents = await prisma.incident.findMany({
+    where: { domain: req.user.domain, status: 'Resolved' },
+    select: { createdAt: true, updatedAt: true }
+  });
+
+  let avgResponseTimeSeconds = 0;
+  if (resolvedIncidents.length > 0) {
+    const totalDiff = resolvedIncidents.reduce((sum, inc) => {
+      return sum + (new Date(inc.updatedAt).getTime() - new Date(inc.createdAt).getTime());
+    }, 0);
+    avgResponseTimeSeconds = Math.round((totalDiff / resolvedIncidents.length) / 1000);
+  }
+
+  // Active staff count
+  const activeStaff = await prisma.user.count({ where: { domain: req.user.domain } });
+
+  res.json({
+    totalIncidents,
+    avgResponseTimeSeconds,
+    activeStaff,
+    incidentsByType,
+    incidentsByStatus
+  });
+});
+
 module.exports = router;

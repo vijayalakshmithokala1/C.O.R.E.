@@ -19,6 +19,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   auditLogs    AuditLog[]
+  assignedIncidents Incident[]
 }
 
 model Session {
@@ -43,6 +44,9 @@ model Incident {
   sessionId        String
   session          Session         @relation(fields: [sessionId], references: [id])
   domain           String          @default("HOSPITAL")
+  assignedToId     Int?
+  assignedToName   String?
+  assignedTo       User?           @relation(fields: [assignedToId], references: [id])
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }

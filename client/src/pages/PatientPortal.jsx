@@ -56,11 +56,14 @@ export default function PatientPortal() {
   // Form
   const [step, setStep] = useState('form'); // 'form' | 'success'
   const [type, setType] = useState('Medical Emergency');
-  const [floor, setFloor] = useState('Floor 1');
+  const [locationType, setLocationType] = useState('Room');
+  const [locationDetails, setLocationDetails] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [activeIncident, setActiveIncident] = useState(null);
+  const [timeSinceCreation, setTimeSinceCreation] = useState(0);
 
   const isHotel = session?.domain === 'HOTEL';
   const terms = {
@@ -116,6 +119,13 @@ export default function PatientPortal() {
       setSession(null);
     });
 
+    socket.on('incident_updated', (updatedIncident) => {
+       setActiveIncident(prev => {
+          if (!prev || prev.id !== updatedIncident.id) return prev;
+          return updatedIncident;
+       });
+    });
+
     return () => {
       socket.disconnect();
       stopEmergencyBuzzAlarm(); // Stop alarm if leaving
@@ -127,8 +137,21 @@ export default function PatientPortal() {
   useEffect(() => {
     if (session && socketRef.current) {
       socketRef.current.emit('join_room', `patients_${session.domain}`);
+      socketRef.current.emit('join_room', `patient_${sessionId}`); // Dedicated room for feedback
     }
   }, [session]);
+
+  // ─── 3 Minute Escalation Timer ─────────────────────────────────
+  useEffect(() => {
+    let interval;
+    if (activeIncident && activeIncident.status !== 'Resolved') {
+      interval = setInterval(() => {
+         const diff = Date.now() - new Date(activeIncident.createdAt).getTime();
+         setTimeSinceCreation(diff);
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [activeIncident]);
 
   // ─── Load session + config ─────────────────────────────────────
   useEffect(() => {
@@ -203,12 +226,14 @@ export default function PatientPortal() {
     fd.append('type', type);
     fd.append('description', description.trim());
     fd.append('sessionId', sessionId);
-    if (type === 'Medical Emergency' || isHotel) fd.append('floor', floor);
+    fd.append('floor', `Room ${locationDetails}`.trim());
     if (file) fd.append('media', file);
 
     try {
       const res = await fetch(`${API_BASE}/api/incident`, { method: 'POST', body: fd });
       if (res.ok) {
+        const createdData = await res.json();
+        setActiveIncident(createdData);
         setStep('success');
       } else {
         const err = await res.json();
@@ -296,16 +321,41 @@ export default function PatientPortal() {
       <main className="portal-body">
 
         {/* Success state */}
-        {step === 'success' && (
+        {step === 'success' && activeIncident && (
           <div className="portal-success-card">
             <div className="portal-success-icon">
-              <CheckCircle size={48} />
+              <CheckCircle size={48} color={activeIncident.status === 'Resolved' ? 'var(--success)' : 'var(--accent-amber)'} />
             </div>
-            <h2>Report Received</h2>
-            <p>{terms.hospital} staff have been alerted and are responding. Please remain calm and stay where you are unless instructed otherwise.</p>
+            <h2>{activeIncident.status === 'Resolved' ? 'Emergency Resolved' : 'Report Received'}</h2>
+            
+            {activeIncident.status === 'Pending' && (
+               <p style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>Alert broadcasted to all staff. Awaiting assignment...</p>
+            )}
+            
+            {(activeIncident.status === 'Reviewed' || activeIncident.status === 'In Progress') && (
+               <div style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--accent-blue)' }}>Help is on the way!</p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
+                    Assigned to: <strong style={{ color: 'var(--text-main)' }}>{activeIncident.assignedToName || 'Staff Member'}</strong>
+                  </p>
+               </div>
+            )}
+
+            {activeIncident.status === 'Resolved' && (
+               <p>The situation has been marked as resolved by staff. Stay safe!</p>
+            )}
+
+            {timeSinceCreation > 180000 && activeIncident.status !== 'Resolved' && (
+               <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
+                  <strong>Still waiting for help?</strong> It's been over 3 minutes.
+                  <button className="primary" style={{ width: '100%', marginTop: '0.5rem', background: '#ef4444' }} onClick={() => { setActiveIncident(null); setStep('form'); }}>Escalate / Send Another Alert</button>
+               </div>
+            )}
+
             <button
               className="portal-btn-outline"
-              onClick={() => { setStep('form'); setDescription(''); setFile(null); }}
+              style={{ marginTop: '1rem' }}
+              onClick={() => { setStep('form'); setDescription(''); setFile(null); setActiveIncident(null); setTimeSinceCreation(0); }}
             >
               Submit Another Report
             </button>
@@ -359,27 +409,20 @@ export default function PatientPortal() {
               ))}
             </div>
 
-            {/* Floor selector — only for Medical in Hospital, or Always in Hotel */}
-            {(type === 'Medical Emergency' || isHotel) && (
-              <div className="portal-field">
-                <label className="portal-section-label">
-                  <MapPin size={14} /> Your Location / Floor
-                </label>
-                <div className="portal-select-wrap">
-                  <select
-                    value={floor}
-                    onChange={(e) => setFloor(e.target.value)}
-                    required
-                    className="portal-select"
-                  >
-                    {(isHotel ? FLOORS_HOTEL : FLOORS_HOSPITAL).map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} className="portal-select-icon" />
-                </div>
-              </div>
-            )}
+            {/* Room Number Location Selection */}
+            <div className="portal-field">
+              <label className="portal-section-label">
+                <MapPin size={14} /> Nearest Room Number
+              </label>
+              <input 
+                type="text" 
+                className="portal-input"
+                placeholder="e.g., 402, 3B, Lobby"
+                value={locationDetails}
+                onChange={(e) => setLocationDetails(e.target.value)}
+                required
+              />
+            </div>
 
             {/* Description */}
             <div className="portal-field">
@@ -443,15 +486,24 @@ export default function PatientPortal() {
               type="submit"
               className="portal-submit-btn"
               disabled={submitting}
-              style={{ '--accent': selectedType.color }}
+              style={{
+                 '--accent': '#dc2626',
+                 backgroundColor: '#dc2626',
+                 color: 'white',
+                 fontSize: '1.2rem',
+                 fontWeight: 'bold',
+                 padding: '1.5rem',
+                 boxShadow: '0 8px 30px rgba(220, 38, 38, 0.4)',
+                 animation: 'pulse 2s infinite'
+              }}
             >
               {submitting ? (
                 <>
-                  <Loader size={20} className="spin-icon" /> Sending Alert...
+                  <Loader size={24} className="spin-icon" /> SENDING SOS...
                 </>
               ) : (
                 <>
-                  <Send size={20} /> Send Emergency Report
+                  <AlertCircle size={24} /> SEND EMERGENCY SOS
                 </>
               )}
             </button>
