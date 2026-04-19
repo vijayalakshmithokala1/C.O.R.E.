@@ -101,6 +101,16 @@ input:focus, select:focus, textarea:focus {
   min-height: 100vh;
 }
 
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--panel-border);
+  }
+}
+
 .sidebar {
   background: var(--panel-bg);
   border-right: 1px solid var(--panel-border);

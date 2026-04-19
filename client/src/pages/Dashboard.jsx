@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle } from 'lucide-react';
+import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, Phone } from 'lucide-react';
 import io from 'socket.io-client';
 import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
 import API_BASE from '../utils/api';
@@ -141,6 +141,39 @@ export default function Dashboard() {
         </nav>
 
         <div style={{ marginTop: 'auto' }}>
+          {/* Help Line Button */}
+          <a 
+            href="tel:+18002673435" 
+            style={{ 
+              textDecoration: 'none',
+              width: '100%', 
+              marginBottom: '1rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.6rem', 
+              padding: '0.75rem',
+              borderRadius: '8px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: 'var(--accent-blue)',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+              e.currentTarget.style.borderColor = 'var(--accent-blue)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            }}
+          >
+            <Phone size={18} /> Call Help Line
+          </a>
+
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
