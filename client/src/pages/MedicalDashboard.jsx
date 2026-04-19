@@ -252,7 +252,7 @@ function IncidentCard({ incident, onStatusChange, onDelete, user, typeColor, isH
                 <Clock size={11} /> {new Date(incident.createdAt).toLocaleTimeString()}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)' }}>
-                {incident.session?.sessionCode || 'UNKNOWN'}
+                {incident.session?.name ? `${incident.session.name} (${incident.session.sessionCode})` : (incident.session?.sessionCode || 'UNKNOWN')}
               </span>
             </div>
           </div>

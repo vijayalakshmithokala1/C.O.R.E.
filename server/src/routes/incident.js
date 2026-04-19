@@ -46,7 +46,7 @@ router.post('/', upload.single('media'), async (req, res) => {
         status: 'Pending'
       },
       include: {
-        session: { select: { sessionCode: true } }
+        session: { select: { sessionCode: true, name: true } }
       }
     });
 
@@ -119,7 +119,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
   const incidents = await prisma.incident.findMany({
     where: filter,
-    include: { session: { select: { sessionCode: true } } },
+    include: { session: { select: { sessionCode: true, name: true } } },
     orderBy: { createdAt: 'desc' },
     take: 100
   });
@@ -134,7 +134,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   const incident = await prisma.incident.update({
     where: { id: parseInt(req.params.id) },
     data: { status },
-    include: { session: { select: { sessionCode: true } } }
+    include: { session: { select: { sessionCode: true, name: true } } }
   });
 
   // Broadcast update
