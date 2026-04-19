@@ -37,12 +37,14 @@ router.get('/sessions', authenticateToken, async (req, res) => {
 
 // Receptionist / Front Desk Check-in
 router.post('/checkin', authenticateToken, requireRole(['Receptionist', 'Administrator', 'Front Desk', 'Hotel Manager']), async (req, res) => {
+  const { name } = req.body;
   const prefix = req.user.domain === 'HOTEL' ? 'GST-' : 'PAT-';
   const sessionCode = `${prefix}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   
   const session = await prisma.session.create({
     data: {
       sessionCode,
+      name: name || null,
       domain: req.user.domain,
       active: true
     }
@@ -51,7 +53,7 @@ router.post('/checkin', authenticateToken, requireRole(['Receptionist', 'Adminis
   await prisma.auditLog.create({
     data: {
       action: 'Session Created',
-      details: `Checked in ${sessionCode} in ${req.user.domain}`,
+      details: `Checked in ${sessionCode} (${name || 'No Name'}) in ${req.user.domain}`,
       userId: req.user.id
     }
   });

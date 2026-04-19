@@ -42,11 +42,18 @@ export default function ReceptionDashboard({ socket, user }) {
   }, [socket]);
 
   const handleCheckIn = async () => {
+    const name = window.prompt(`Enter ${terms.patient} Name:`);
+    if (name === null) return; // Cancelled
+
     setCheckingIn(true);
     try {
       const res = await fetch(`${API_BASE}/api/session/checkin`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ name }),
       });
       const data = await res.json();
       setSessions((prev) => [data, ...prev]);
@@ -59,7 +66,7 @@ export default function ReceptionDashboard({ socket, user }) {
   };
 
   const handleDischarge = async (id) => {
-    if (!window.confirm(`Discharge this ${terms.patient.toLowerCase()}? Their QR code will immediately deactivate.`)) return;
+    if (!window.confirm(`${terms.discharge} this ${terms.patient.toLowerCase()}? Their QR code will immediately deactivate.`)) return;
     try {
       const res = await fetch(`${API_BASE}/api/session/discharge/${id}`, {
         method: 'POST',
@@ -126,7 +133,7 @@ export default function ReceptionDashboard({ socket, user }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{terms.patient} {isHotel ? 'Check-In' : 'Intake'}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Manage check-ins and generate QR access codes</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Manage {isHotel ? 'check-ins' : 'intake'} and generate QR access codes</p>
         </div>
         <button
           onClick={handleCheckIn}
@@ -223,7 +230,7 @@ export default function ReceptionDashboard({ socket, user }) {
                     onClick={() => handleDischarge(selectedSession.id)}
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                   >
-                    <UserMinus size={16} /> Discharge
+                    <UserMinus size={16} /> {terms.discharge}
                   </button>
                 </div>
               </>
@@ -241,10 +248,10 @@ export default function ReceptionDashboard({ socket, user }) {
         <table>
           <thead style={{ background: 'rgba(0,0,0,0.2)' }}>
             <tr>
-              <th>{terms.patient} Code</th>
+              <th>{terms.patient} Name</th>
               <th>Status</th>
               <th>Checked In</th>
-              <th>Discharged</th>
+              <th>{terms.discharge}d</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -252,13 +259,14 @@ export default function ReceptionDashboard({ socket, user }) {
             {sessions.map((s) => (
               <tr key={s.id} style={{ opacity: s.active ? 1 : 0.55 }}>
                 <td className="mono" style={{ fontWeight: 600 }}>
-                  {s.sessionCode}
+                  <div style={{ color: 'var(--text-main)' }}>{s.name || 'Anonymous'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.sessionCode}</div>
                 </td>
                 <td>
                   {s.active ? (
                     <span className="tag status-Resolved">● Active</span>
                   ) : (
-                    <span className="tag status-Pending">Discharged</span>
+                    <span className="tag status-Pending">{terms.discharge}d</span>
                   )}
                 </td>
                 <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
@@ -280,10 +288,10 @@ export default function ReceptionDashboard({ socket, user }) {
                       <button
                         className="warning"
                         onClick={() => handleDischarge(s.id)}
-                        title="Discharge"
+                        title={terms.discharge}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
                       >
-                        <UserMinus size={14} /> Discharge
+                        <UserMinus size={14} /> {terms.discharge}
                       </button>
                     )}
                   </div>

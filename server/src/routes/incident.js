@@ -90,7 +90,7 @@ router.post('/', upload.single('media'), async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   const { role, floors, domain } = req.user;
   
-  let filter = { domain }; // ALWAYS filter by domain
+  let filter = { domain, isDeleted: false }; // ALWAYS filter by domain and exclude deleted
 
   if (role === 'Doctor' || role === 'Nurse' || role === 'Security' || role === 'Maintenance') {
     // Parse assigned floors
@@ -148,6 +148,32 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   });
 
   res.json(incident);
+});
+
+// Soft Delete Incident (Administrator / Hotel Manager Only)
+router.delete('/:id', authenticateToken, async (req, res) => {
+  const { role } = req.user;
+  if (role !== 'Administrator' && role !== 'Hotel Manager') {
+    return res.status(403).json({ error: 'Only Administrators can remove incidents from the feed.' });
+  }
+
+  const incident = await prisma.incident.update({
+    where: { id: parseInt(req.params.id) },
+    data: { isDeleted: true }
+  });
+
+  // Broadcast that the incident is removed (we can use the same updated event, but client will filter it)
+  req.io.to(`staff_all_${incident.domain}`).emit('incident_updated', { ...incident, removed: true });
+
+  await prisma.auditLog.create({
+    data: {
+      action: 'Archive Incident',
+      details: `Incident ID ${incident.id} archived by admin`,
+      userId: req.user.id
+    }
+  });
+
+  res.json({ success: true, id: incident.id });
 });
 
 module.exports = router;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert } from 'lucide-react';
+import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert, Trash2 } from 'lucide-react';
 import { playIncidentAlarm, unlockAudio } from '../utils/alarm';
 import { useDomain } from '../context/DomainContext';
 import API_BASE from '../utils/api';
@@ -59,7 +59,12 @@ export default function MedicalDashboard({ socket, user }) {
     };
 
     const handleUpdate = (updated) => {
-      setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      setIncidents((prev) => {
+        if (updated.removed) {
+          return prev.filter((i) => i.id !== updated.id);
+        }
+        return prev.map((i) => (i.id === updated.id ? updated : i));
+      });
       setLastUpdated(new Date());
     };
 
@@ -87,6 +92,23 @@ export default function MedicalDashboard({ socket, user }) {
         },
         body: JSON.stringify({ status }),
       });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteIncident = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this incident from the feed? It will remain in the database records.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/incident/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (res.ok) {
+        setIncidents((prev) => prev.filter((i) => i.id !== id));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -173,10 +195,12 @@ export default function MedicalDashboard({ socket, user }) {
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {sorted.map((incident) => (
-              <IncidentCard
+            <IncidentCard
               key={incident.id}
               incident={incident}
               onStatusChange={updateStatus}
+              onDelete={deleteIncident}
+              user={user}
               typeColor={typeColor}
               isHotel={isHotel}
             />
@@ -188,7 +212,7 @@ export default function MedicalDashboard({ socket, user }) {
 }
 
 // ── Incident Card ─────────────────────────────────────────────────
-function IncidentCard({ incident, onStatusChange, typeColor, isHotel }) {
+function IncidentCard({ incident, onStatusChange, onDelete, user, typeColor, isHotel }) {
   const color = typeColor[incident.type] || 'var(--accent-blue)';
   const isResolved = incident.status === 'Resolved';
 
@@ -245,6 +269,18 @@ function IncidentCard({ incident, onStatusChange, typeColor, isHotel }) {
           <option value="In Progress">In Progress</option>
           <option value="Resolved">Resolved</option>
         </select>
+        
+        {/* Delete/Archive button (Admins Only) */}
+        {(user?.role === 'Administrator' || user?.role === 'Hotel Manager') && incident.status === 'Resolved' && (
+          <button 
+            onClick={() => onDelete(incident.id)}
+            className="danger"
+            style={{ padding: '0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title="Archive Incident"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
 
       {/* Floor */}

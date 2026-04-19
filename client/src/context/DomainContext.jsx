@@ -23,7 +23,9 @@ export function DomainProvider({ children }) {
     nurse: isHotel ? 'Security' : 'Nurse',
     ward: isHotel ? 'Section' : 'Ward',
     receptionist: isHotel ? 'Front Desk' : 'Receptionist',
-    hospital: isHotel ? 'Hotel' : 'Hospital'
+    hospital: isHotel ? 'Hotel' : 'Hospital',
+    discharge: isHotel ? 'Check-Out' : 'Discharge',
+    discharging: isHotel ? 'Checking Out' : 'Discharging'
   };
 
   return (
