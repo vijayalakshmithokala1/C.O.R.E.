@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   // Hospital: "Administrator", "Doctor", "Nurse", "Receptionist". Hotel: "Hotel Manager", "Security", "Maintenance", "Front Desk"
+  floors       String?  // JSON string or comma-separated
+  domain       String   @default("HOSPITAL") // "HOSPITAL" | "HOTEL"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model Session {
+  id           String      @id @default(uuid())
+  sessionCode  String      @unique // e.g. PAT-1234 or GST-1234
+  domain       String      @default("HOSPITAL")
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  dischargedAt DateTime?
+  incidents    Incident[]
+}
+
+model Incident {
+  id               Int             @id @default(autoincrement())
+  type             String          
+  description      String
+  floor            String?         
+  uploadedMediaUrl String?
+  status           String          @default("Pending") // "Pending", "Reviewed", "In Progress", "Resolved"
+  sessionId        String
+  session          Session         @relation(fields: [sessionId], references: [id])
+  domain           String          @default("HOSPITAL")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model SystemConfig {
+  id             Int      @id @default(autoincrement())
+  geofenceLat    Float    @default(0)
+  geofenceLng    Float    @default(0)
+  geofenceRadius Int      @default(200) // Default 200 meters
+  domain         String   @default("HOSPITAL") // Optionally we can have separate configs, but ID=1 and ID=2 could be used. Let's rely on domain filtering.
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  details   String?
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  timestamp DateTime @default(now())
+}

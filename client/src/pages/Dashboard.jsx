@@ -1,0 +1,174 @@
+import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
+import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle } from 'lucide-react';
+import io from 'socket.io-client';
+import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
+import { useTheme } from '../context/ThemeContext';
+import { useDomain } from '../context/DomainContext';
+
+import AdminDashboard from './AdminDashboard';
+import ReceptionDashboard from './ReceptionDashboard';
+import MedicalDashboard from './MedicalDashboard';
+
+export default function Dashboard() {
+  const [user, setUser] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [emergencyActive, setEmergencyActive] = useState(false);
+  const [emergencyAlertMsg, setEmergencyAlertMsg] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
+  const { terms, domain } = useDomain();
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      navigate('/login');
+      return;
+    }
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+
+    const newSocket = io('http://localhost:5000');
+    setSocket(newSocket);
+
+    // Unlock audio on first user interaction
+    const unlock = () => { unlockAudio(); window.removeEventListener('click', unlock); };
+    window.addEventListener('click', unlock);
+
+    // Join appropriate socket rooms based on role AND domain
+    newSocket.on('connect', () => {
+      newSocket.emit('join_room', `staff_all_${parsedUser.domain}`);
+      newSocket.emit('join_room', `${parsedUser.role}_${parsedUser.domain}`);
+      
+      if (parsedUser.role === 'Doctor' || parsedUser.role === 'Nurse' || parsedUser.role === 'Security' || parsedUser.role === 'Maintenance') {
+        const floors = parsedUser.floors ? parsedUser.floors.split(',') : [];
+        floors.forEach(floor => {
+          newSocket.emit('join_room', `floor_${floor.trim()}_${parsedUser.domain}`);
+        });
+      }
+    });
+
+    // Staff hear the emergency buzz alarm too
+    newSocket.on('emergency_buzz', (data) => {
+      setEmergencyAlertMsg(data?.message || 'SYSTEM WIDE EMERGENCY ACTIVATED');
+      playEmergencyBuzzAlarm();
+    });
+
+    return () => {
+      newSocket.close();
+      stopEmergencyBuzzAlarm();
+      window.removeEventListener('click', unlock);
+    };
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const sendEmergencyBuzz = () => {
+    if (window.confirm(`Send emergency buzz to ALL active users in ${terms.hospital}? This cannot be undone.`)) {
+      socket.emit('buzz_triggered', {
+        message: 'CRITICAL EMERGENCY: Please follow staff instructions immediately.',
+        issuerData: { name: user.name, role: user.role },
+        domain: user.domain
+      });
+      alert('Emergency buzz broadcasted.');
+    }
+  }
+
+  if (!user) return <div className="auth-wrapper"><h2 className="auth-title">Connecting...</h2></div>;
+
+  return (
+    <div className="dashboard-grid">
+      {/* ── Emergency Buzz Overlay ── */}
+      {emergencyAlertMsg && (
+        <div className="portal-buzz-overlay">
+          <div className="portal-buzz-card">
+            <div className="portal-buzz-icon">
+              <AlertCircle size={56} />
+            </div>
+            <h1>Emergency Alert</h1>
+            <p>{emergencyAlertMsg}</p>
+            <div className="portal-buzz-instruction">
+              An emergency buzz was triggered. Please review incident feed immediately and coordinate response!
+            </div>
+            <button className="portal-buzz-dismiss" onClick={() => {
+              setEmergencyAlertMsg(null);
+              stopEmergencyBuzzAlarm();
+            }}>
+              ✓ Acknowledge & Mute
+            </button>
+          </div>
+        </div>
+      )}
+
+      <aside className="sidebar">
+        <h2>C.O.R.E.</h2>
+        <div style={{ marginBottom: '2rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <div style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{user.name}</div>
+          <div>Role: {user.role}</div>
+          {user.floors && <div>Floors: {user.floors}</div>}
+        </div>
+        
+        <nav style={{ flex: 1 }}>
+          <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+            <Activity size={18} /> Incidents
+          </Link>
+          
+          {(user.role === 'Receptionist' || user.role === 'Administrator' || user.role === 'Front Desk' || user.role === 'Hotel Manager') ? (
+            <Link to="/dashboard/patients" className={`nav-link ${location.pathname === '/dashboard/patients' ? 'active' : ''}`}>
+              <Users size={18} /> {terms.patients}
+            </Link>
+          ) : null}
+
+          {(user.role === 'Administrator' || user.role === 'Hotel Manager') && (
+            <>
+              <Link to="/dashboard/staff" className={`nav-link ${location.pathname === '/dashboard/staff' ? 'active' : ''}`}>
+                <UserPlus size={18} /> Manage Staff
+              </Link>
+              <Link to="/dashboard/settings" className={`nav-link ${location.pathname === '/dashboard/settings' ? 'active' : ''}`}>
+                <Settings size={18} /> System Config
+              </Link>
+              <Link to="/dashboard/audit" className={`nav-link ${location.pathname === '/dashboard/audit' ? 'active' : ''}`}>
+                <Shield size={18} /> Audit Logs
+              </Link>
+            </>
+          )}
+        </nav>
+
+        <div style={{ marginTop: 'auto' }}>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
+
+          <button className="danger" style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }} onClick={sendEmergencyBuzz}>
+            <AlertTriangle size={18} /> 🚨 Send Emergency Alert
+          </button>
+          
+          <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
+      </aside>
+
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<MedicalDashboard socket={socket} user={user} />} />
+          <Route path="/patients" element={<ReceptionDashboard socket={socket} user={user} />} />
+          <Route path="/staff" element={<AdminDashboard section="staff" user={user} />} />
+          <Route path="/settings" element={<AdminDashboard section="settings" user={user} />} />
+          <Route path="/audit" element={<AdminDashboard section="audit" user={user} />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
