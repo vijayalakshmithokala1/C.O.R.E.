@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { playEmergencyBuzzAlarm, stopEmergencyBuzzAlarm, unlockAudio } from '../utils/alarm';
 import API_BASE from '../utils/api';
+import { useDomain } from '../context/DomainContext';
 
 // Haversine formula — distance between two GPS points in metres
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -36,6 +37,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 const INCIDENT_TYPES = [
   { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Requires immediate medical attention' },
   { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
+];
+
 export default function PatientPortal() {
   const { sessionId } = useParams();
   const { domain: contextDomain, terms, DOMAINS } = useDomain();

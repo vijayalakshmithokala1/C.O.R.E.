@@ -60,6 +60,34 @@ export default function AdminDashboard({ section, user }) {
     }
   }, [section, user]);
 
+  const triggerIoTSensor = async (type, location) => {
+    setSimulatingSensor(true);
+    try {
+      const feed = cctvFeeds.find(f => f.name === location);
+      await fetch(`${API_BASE}/api/incident/system-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domain: currentDomain,
+          cameraLocation: location,
+          eventType: type,
+          confidence: 98,
+          zone: feed?.zone || 'General'
+        })
+      });
+      if (feed) {
+        setCctvFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, status: 'Alert' } : f));
+        setTimeout(() => {
+          setCctvFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, status: 'Normal' } : f));
+        }, 5000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSimulatingSensor(false);
+    }
+  };
+
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     try {

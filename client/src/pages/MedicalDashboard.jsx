@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert, Trash2, Video, Send } from 'lucide-react';
+import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert, Trash2, Video, Send, Loader } from 'lucide-react';
 import { playIncidentAlarm, unlockAudio } from '../utils/alarm';
 import { useDomain } from '../context/DomainContext';
 import API_BASE from '../utils/api';
