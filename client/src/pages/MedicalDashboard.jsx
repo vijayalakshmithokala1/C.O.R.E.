@@ -110,7 +110,6 @@ export default function MedicalDashboard({ socket, user }) {
       socket.off('incident_video_stop');
       socket.off('connect', handleJoin);
     };
-    };
   }, [socket, fetchIncidents]);
 
   // ── Update status ──────────────────────────────────────────────
