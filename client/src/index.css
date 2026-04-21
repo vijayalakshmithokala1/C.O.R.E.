@@ -940,3 +940,42 @@ th {
   font-weight: 900;
   border-radius: 4px;
 }
+
+/* ─── LANDING PAGE SECTOR CARDS ─── */
+.landing-wrapper {
+  background: radial-gradient(circle at center, #1e293b 0%, #030712 100%);
+}
+
+.landing-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 2.5rem 1.5rem;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-main);
+  box-shadow: 0 10px 30px -15px rgba(0,0,0,0.5);
+}
+
+.landing-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 20px 40px -20px rgba(0,0,0,0.7);
+  background: rgba(255,255,255,0.02);
+}
+
+.landing-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.landing-card p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}

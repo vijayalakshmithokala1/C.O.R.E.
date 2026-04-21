@@ -68,15 +68,17 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           {!isSetupMode && (
             <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <label className="label" style={{ fontSize: '0.7rem' }}>Select Management Sector</label>
-              <select value={domain} onChange={(e) => setDomain(e.target.value)} style={{ marginBottom: 0 }}>
-                {Object.keys(DOMAINS).map(key => (
-                  <option key={key} value={key}>{DOMAINS[key].label}</option>
-                ))}
-              </select>
-              
+              <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--panel-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div>
+                   <label className="label" style={{ fontSize: '0.6rem', textTransform: 'uppercase', marginBottom: 0 }}>Active Sector</label>
+                   <div style={{ fontWeight: 700, color: 'var(--accent-blue)' }}>{terms.label} Command</div>
+                 </div>
+                 <Link to="/" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>Change</Link>
+              </div>
+
               <label className="label" style={{ fontSize: '0.7rem' }}>Operational Role</label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} style={{ marginBottom: 0 }}>
+              <select value={role} onChange={(e) => setRole(e.target.value)} style={{ marginBottom: 0 }} required>
+                <option value="" disabled>Select your role...</option>
                 {domain === 'HOSPITAL' && (
                   <>
                     <option value="Administrator">Administrator</option>

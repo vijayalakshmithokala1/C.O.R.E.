@@ -23,53 +23,49 @@ export default function Landing() {
         {/* Hospital Card */}
         <button 
           onClick={() => handleSelectDomain('HOSPITAL')}
-          style={{
-            background: 'var(--panel-bg)',
-            border: '2px solid var(--panel-border)',
-            borderRadius: '12px',
-            padding: '3rem 2rem',
-            width: '300px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            color: 'var(--text-main)'
-          }}
+          className="landing-card"
           onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-red)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}
         >
-          <PlusSquare size={64} color="var(--accent-red)" style={{ marginBottom: '1.5rem' }} />
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Hospital Command</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Medical emergencies, patient tracking, and hospital staff coordination.
-          </p>
+          <PlusSquare size={48} color="var(--accent-red)" style={{ marginBottom: '1rem' }} />
+          <h3>Hospital Command</h3>
+          <p>Medical emergencies, patient tracking, and staff coordination.</p>
         </button>
 
         {/* Hotel Card */}
         <button 
           onClick={() => handleSelectDomain('HOTEL')}
-          style={{
-            background: 'var(--panel-bg)',
-            border: '2px solid var(--panel-border)',
-            borderRadius: '12px',
-            padding: '3rem 2rem',
-            width: '300px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            color: 'var(--text-main)'
-          }}
+          className="landing-card"
           onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-amber)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}
         >
-          <Building2 size={64} color="var(--accent-amber)" style={{ marginBottom: '1.5rem' }} />
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Hotel Security</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Guest management, maintenance tracking, and hotel security response.
-          </p>
+          <Building2 size={48} color="var(--accent-amber)" style={{ marginBottom: '1rem' }} />
+          <h3>Hotel Security</h3>
+          <p>Guest safety, maintenance tracking, and security response.</p>
+        </button>
+
+        {/* Airport Card */}
+        <button 
+          onClick={() => handleSelectDomain('AIRPORT')}
+          className="landing-card"
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-blue)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}
+        >
+          <Building2 size={48} color="var(--accent-blue)" style={{ marginBottom: '1rem' }} />
+          <h3>Airport Operations</h3>
+          <p>Terminal safety, baggage security, and flow management.</p>
+        </button>
+
+        {/* Mall Card */}
+        <button 
+          onClick={() => handleSelectDomain('MALL')}
+          className="landing-card"
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-purple)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--panel-border)'}
+        >
+          <Building2 size={48} color="var(--accent-purple)" style={{ marginBottom: '1rem' }} />
+          <h3>Shopping Mall</h3>
+          <p>Crowd control, tenant safety, and lost & found coordination.</p>
         </button>
 
       </div>
