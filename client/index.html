@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>C.O.R.E. | Crisis Operations & Response Ecosystem</title>
+    <title>C.O.R.E. | Crisis Operations &amp; Response Ecosystem</title>
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1e293b" />
   </head>
@@ -12,13 +12,13 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // Unregister ALL service workers and clear ALL caches to prevent blank screens
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(reg => {
-            console.log('SW Registered', reg);
-          }).catch(err => {
-            console.log('SW Registration failed', err);
-          });
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(reg => reg.unregister());
+        });
+        caches.keys().then(names => {
+          names.forEach(name => caches.delete(name));
         });
       }
     </script>
