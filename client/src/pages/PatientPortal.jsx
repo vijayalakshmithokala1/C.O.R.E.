@@ -400,7 +400,48 @@ export default function PatientPortal() {
                 </button>
               ))}
             </div>
+            <div className="portal-section-label"><MapPin size={14} /> Location Details</div>
+            <div className="portal-select-wrap">
+              <select className="portal-select" value={locationDetails} onChange={(e) => setLocationDetails(e.target.value)} required>
+                <option value="">Select Floor / Area...</option>
+                {DOMAINS[session.domain || contextDomain]?.floors?.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+                <option value="Other / Outside">Other / Outside</option>
+              </select>
+              <ChevronDown className="portal-select-icon" size={18} />
+            </div>
 
+            <div className="portal-section-label"><AlertCircle size={14} /> Situation Briefing</div>
+            <textarea 
+              className="portal-textarea" 
+              placeholder={`Describe the emergency...`} 
+              rows={4} value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              required 
+            />
+
+            <div className="portal-section-label"><Camera size={14} /> Evidence / Photo (Optional)</div>
+            <label className="portal-file-label">
+              <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files[0])} style={{ display: 'none' }} accept="image/*,video/*,audio/*" />
+              {file ? (
+                <>
+                  <FileText size={18} /> <span style={{ flex: 1 }}>{file.name}</span>
+                  <button type="button" className="portal-file-clear" onClick={(e) => { e.preventDefault(); setFile(null); fileInputRef.current.value = ''; }}>
+                    <X size={14} />
+                  </button>
+                </>
+              ) : (
+                <><Camera size={18} /> Tap to attach photo/video evidence</>
+              )}
+            </label>
+
+            {formError && <div className="portal-form-error"><AlertTriangle size={16} /> {formError}</div>}
+
+            <button type="submit" className="portal-submit-btn" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader size={24} className="spin-icon" /> TRANSMITTING SOS...
                 </>
               ) : (
                 <>
