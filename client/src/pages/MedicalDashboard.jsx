@@ -1,15 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertCircle, FileAudio, MapPin, CheckCircle, Clock, RefreshCw, Wifi, ShieldAlert, Trash2, Video, Send } from 'lucide-react';
 import { playIncidentAlarm, unlockAudio } from '../utils/alarm';
 import { useDomain } from '../context/DomainContext';
 import API_BASE from '../utils/api';
+import EmergencyPlaybook from '../components/EmergencyPlaybook';
 
 export default function MedicalDashboard({ socket, user }) {
   const [incidents, setIncidents] = useState([]);
+  const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const { isHotel } = useDomain();
+  const [hicsMode, setHicsMode] = useState(false);
+  const [activeVideoFeed, setActiveVideoFeed] = useState(null);
+  const [dispatching, setDispatching] = useState(null);
+  const { isHotel, terms, domain } = useDomain();
 
   // Unlock AudioContext on first interaction (browser autoplay policy)
   useEffect(() => {
@@ -41,6 +46,13 @@ export default function MedicalDashboard({ socket, user }) {
   // Initial fetch
   useEffect(() => {
     fetchIncidents();
+    // Fetch resources
+    fetch(`${API_BASE}/api/admin/resources`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(r => r.json())
+    .then(data => setResources(data))
+    .catch(e => console.error('Resource fetch error:', e));
   }, [fetchIncidents]);
 
   // ── Socket listeners — re-attach whenever socket changes ──────
@@ -70,6 +82,14 @@ export default function MedicalDashboard({ socket, user }) {
 
     socket.on('new_incident', handleNew);
     socket.on('incident_updated', handleUpdate);
+    
+    socket.on('incident_video_start', (data) => {
+       setActiveVideoFeed(data.incidentId);
+    });
+
+    socket.on('incident_video_stop', () => {
+       setActiveVideoFeed(null);
+    });
 
     // When socket reconnects, re-fetch to catch anything missed
     socket.on('connect', () => fetchIncidents(true));
@@ -77,6 +97,8 @@ export default function MedicalDashboard({ socket, user }) {
     return () => {
       socket.off('new_incident', handleNew);
       socket.off('incident_updated', handleUpdate);
+      socket.off('incident_video_start');
+      socket.off('incident_video_stop');
       socket.off('connect');
     };
   }, [socket, fetchIncidents]);
@@ -136,28 +158,68 @@ export default function MedicalDashboard({ socket, user }) {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{isHotel ? 'Security & Maintenance Feed' : 'Live Incident Feed'}</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <Wifi size={12} style={{ color: socket?.connected ? 'var(--success)' : 'var(--accent-red)' }} />
-            {socket?.connected ? 'Live' : 'Disconnected'}
-            {lastUpdated && (
-              <span>· Updated {lastUpdated.toLocaleTimeString()}</span>
-            )}
+    <div className={`dashboard-wrapper ${hicsMode ? 'hics-theme' : ''}`}>
+      {/* ── Video Triage Modal ── */}
+      {activeVideoFeed && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ width: '600px', maxWidth: '90vw' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-red)' }}>
+                <Video size={20} /> <h3 style={{ margin: 0 }}>LIVE VIDEO TRIAGE</h3>
+              </div>
+              <button className="portal-buzz-dismiss" onClick={() => setActiveVideoFeed(null)}>Close</button>
+            </div>
+            
+            <div style={{ background: '#000', borderRadius: '8px', position: 'relative', height: '340px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <div className="stream-badge" style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>LIVE FEED: INCIDENT #{activeVideoFeed}</div>
+               <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+                  <Loader size={32} className="spin-icon" style={{ marginBottom: '1rem' }} />
+                  <div>Syncing Encrypted Stream...</div>
+               </div>
+               {/* Mock Video Element */}
+               <video autoPlay playsInline className="live-camera-feed" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
           </div>
         </div>
-        <button
-          onClick={() => fetchIncidents(true)}
-          disabled={refreshing}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
-        >
-          <RefreshCw size={14} className={refreshing ? 'spin-icon' : ''} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
+      )}
+
+      <header className="dashboard-header" style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="logo-icon"><ShieldAlert size={28} /></div>
+            <div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{terms.medical} Command</h1>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{terms.label} Sector • Status: Operational</div>
+            </div>
+          </div>
+          
+          <button 
+            className={`hics-toggle ${hicsMode ? 'active' : ''}`} 
+            onClick={() => setHicsMode(!hicsMode)}
+            style={{ 
+              background: hicsMode ? 'var(--accent-red)' : 'transparent',
+              color: hicsMode ? 'white' : 'var(--text-muted)',
+              border: '1px solid ' + (hicsMode ? 'var(--accent-red)' : 'var(--panel-border)'),
+              padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem'
+            }}
+          >
+            <ShieldAlert size={14} /> {hicsMode ? 'HICS MODE ACTIVE' : 'ACTIVATE HICS'}
+          </button>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button onClick={() => fetchIncidents(true)} disabled={refreshing} className="outline-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+            <RefreshCw size={14} className={refreshing ? 'spin-icon' : ''} /> Refresh
+          </button>
+          <div className="staff-badge">
+            <div className="user-icon"><ActivityIcon color="white" /></div>
+            <div style={{ color: 'white' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{user.name}</div>
+              <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>{user.role}</div>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Stats row */}
       {incidents.length > 0 && (
@@ -174,157 +236,169 @@ export default function MedicalDashboard({ socket, user }) {
         </div>
       )}
 
-      {/* Empty state */}
-      {sorted.length === 0 ? (
-        <div className="panel" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
-          <CheckCircle size={48} style={{ marginBottom: '1rem', color: 'var(--success)', opacity: 0.7 }} />
-          <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>All Clear</h3>
-          <p style={{ fontSize: '0.875rem' }}>
-            No incidents reported yet.{' '}
-            {user?.floors
-              ? `You are monitoring: ${user.floors}`
-              : 'You are monitoring all areas.'}
-          </p>
-          <button
-            onClick={() => fetchIncidents(true)}
-            style={{ marginTop: '1.5rem', fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <RefreshCw size={14} /> Check for updates
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {sorted.map((incident) => (
-            <IncidentCard
-              key={incident.id}
-              incident={incident}
-              onStatusChange={updateStatus}
-              onDelete={deleteIncident}
-              user={user}
-              typeColor={typeColor}
-              isHotel={isHotel}
-            />
-          ))}
-        </div>
-      )}
+      {/* Main Grid */}
+      <div style={{ display: 'grid', gap: '1.5rem' }}>
+        {sorted.length === 0 ? (
+          <div className="panel" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+            <CheckCircle size={48} style={{ marginBottom: '1rem', color: 'var(--success)', opacity: 0.7 }} />
+            <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>All Clear</h3>
+            <p style={{ fontSize: '0.875rem' }}>No active incidents reported in this sector.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {sorted.map((incident) => (
+              <IncidentCard
+                key={incident.id}
+                incident={incident}
+                resources={resources}
+                onStatusChange={updateStatus}
+                onDelete={deleteIncident}
+                user={user}
+                typeColor={typeColor}
+                isHotel={isHotel}
+                hicsMode={hicsMode}
+                activeVideoFeed={activeVideoFeed}
+                setActiveVideoFeed={setActiveVideoFeed}
+                dispatching={dispatching === incident.id}
+                setDispatching={(val) => setDispatching(val ? incident.id : null)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 // ── Incident Card ─────────────────────────────────────────────────
-function IncidentCard({ incident, onStatusChange, onDelete, user, typeColor, isHotel }) {
+function IncidentCard({ 
+  incident, resources, onStatusChange, onDelete, user, typeColor, isHotel, 
+  hicsMode, activeVideoFeed, setActiveVideoFeed, dispatching, setDispatching 
+}) {
   const color = typeColor[incident.type] || 'var(--accent-blue)';
   const isResolved = incident.status === 'Resolved';
 
+  const handleDispatch = async () => {
+    setDispatching(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/incident/${incident.id}/dispatch`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ domain: incident.domain })
+      });
+      // Simulate progress for UI
+      setTimeout(() => setDispatching(false), 3000);
+    } catch (err) {
+      setDispatching(false);
+    }
+  };
+
   return (
     <div
-      className="panel"
+      className={`panel incident-card-main ${hicsMode ? 'hics-card' : ''}`}
       style={{
-        borderLeft: `3px solid ${color}`,
+        borderLeft: `4px solid ${color}`,
         opacity: isResolved ? 0.6 : 1,
-        transition: 'opacity 0.3s',
+        background: hicsMode ? 'rgba(255,255,255,0.02)' : 'var(--panel-bg)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flex: 1, minWidth: 0 }}>
-          {/* Icon */}
-          <div style={{
-            width: 40, height: 40, borderRadius: '8px',
-            background: `${color}20`,
-            border: `1px solid ${color}40`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            {incident.type === 'Fire' && <AlertCircle size={20} color={color} />}
-            {incident.type === 'Medical Emergency' && <ActivityIcon color={color} />}
-            {incident.type === 'Security Breach' && <ShieldAlert size={20} color={color} />}
-            {incident.type === 'Maintenance Issue' && <ActivityIcon color={color} />}
-            {incident.type === 'Other' && <AlertCircle size={20} color={color} />}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+          <div className={`incident-icon-box ${incident.status === 'Pending' ? 'pulse-border' : ''}`} style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
+             {incident.type === 'Fire' && <AlertCircle size={22} color={color} />}
+             {(incident.type === 'Medical Emergency' || incident.type === 'Maintenance Issue') && <ActivityIcon color={color} />}
+             {incident.type === 'Security Breach' && <ShieldAlert size={22} color={color} />}
+             {incident.type === 'Other' && <AlertCircle size={22} color={color} />}
           </div>
 
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
-              <span className={`tag ${incident.type.split(' ')[0]}`}>{incident.type}</span>
+            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+              <span className="tag-solid" style={{ background: color }}>{incident.type.toUpperCase()}</span>
               <span className={`tag status-${incident.status.replace(' ', '')}`}>{incident.status}</span>
+              {incident.severityScore >= 7 && <span className="tag-panic">CRITICAL SEVERITY</span>}
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Clock size={11} /> {new Date(incident.createdAt).toLocaleTimeString()}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>
-                {incident.session?.name ? `${incident.session.name} (${incident.session.sessionCode})` : (incident.session?.sessionCode || 'UNKNOWN')}
-              </span>
-              {incident.assignedToName && (
-                <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>
-                  Assigned: {incident.assignedToName}
-                </span>
-              )}
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+               <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Clock size={12} /> {new Date(incident.createdAt).toLocaleTimeString()}</span>
+               <span style={{ fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: '3px' }}>{incident.session?.sessionCode || 'SYS-AUTO'}</span>
+               {incident.assignedToName && <span style={{ color: 'var(--accent-blue)' }}>● {incident.assignedToName}</span>}
             </div>
           </div>
         </div>
 
-        {/* Status changer */}
         <select
           value={incident.status}
           onChange={(e) => onStatusChange(incident.id, e.target.value)}
-          style={{ marginBottom: 0, padding: '0.4rem 0.6rem', fontSize: '0.8rem', minWidth: 120, flexShrink: 0 }}
+          className="status-dropdown"
         >
           <option value="Pending">Pending</option>
-          <option value="Reviewed">Reviewed</option>
-          <option value="In Progress">In Progress</option>
+          <option value="Reviewed">Claimed</option>
+          <option value="In Progress">Responding</option>
           <option value="Resolved">Resolved</option>
         </select>
-        
-        {/* Delete/Archive button (Admins Only) */}
-        {(user?.role === 'Administrator' || user?.role === 'Hotel Manager') && incident.status === 'Resolved' && (
-          <button 
-            onClick={() => onDelete(incident.id)}
-            className="danger"
-            style={{ padding: '0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            title="Archive Incident"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
       </div>
 
-      {/* Floor */}
-      {incident.floor && (
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-          color: 'var(--accent-amber)', fontSize: '0.85rem', fontWeight: 600,
-          background: 'rgba(245,158,11,0.1)', padding: '0.3rem 0.75rem',
-          borderRadius: '20px', marginBottom: '0.75rem',
-        }}>
-          <MapPin size={13} /> {incident.floor}
-        </div>
+      {hicsMode && (
+         <div className="hics-strat-row">
+            <div className="hics-strat-item">
+               <label>Objective</label>
+               <span>Life Safety & Containment</span>
+            </div>
+            <div className="hics-strat-item">
+               <label>Tactical Priority</label>
+               <span style={{ color: 'var(--accent-red)' }}>Immediate Evacuation</span>
+            </div>
+         </div>
       )}
 
-      {/* Description */}
-      <p style={{
-        background: 'var(--bg-color)',
-        padding: '0.875rem',
-        borderRadius: 'var(--radius)',
-        border: '1px solid var(--panel-border)',
-        fontSize: '0.9rem',
-        lineHeight: 1.6,
-        margin: 0,
-      }}>
-        {incident.description}
-      </p>
+      <div className="incident-body-grid">
+         <div className="incident-text-panel">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--accent-amber)', fontSize: '0.85rem', fontWeight: 'bold' }}>
+               <MapPin size={14} /> {incident.floor || 'Unknown Location'}
+               {resources.length > 0 && (
+                  <span style={{ color: 'var(--success)', fontWeight: 'normal', fontSize: '0.75rem' }}>
+                     (Nearby: {resources.find(r => r.floor === incident.floor)?.name || 'Check Map'})
+                  </span>
+               )}
+            </div>
+            <p className="description-text">{incident.description}</p>
+         </div>
 
-      {/* Media attachment */}
+         <div className="response-actions-stack">
+            {activeVideoFeed === incident.id ? (
+               <button className="tool-btn video-active" onClick={() => setActiveVideoFeed(incident.id)}>
+                  <Video size={16} /> VIEW LIVE TRIAGE
+               </button>
+            ) : (
+               <button className="tool-btn disabled" disabled>
+                  <Video size={16} /> VIDEO UNAVAILABLE
+               </button>
+            )}
+
+            <button 
+              className={`tool-btn dispatch ${dispatching ? 'loading' : ''}`} 
+              onClick={handleDispatch}
+              disabled={dispatching || isResolved}
+            >
+               {dispatching ? <RefreshCw size={14} className="spin-icon" /> : <Send size={14} />}
+               {dispatching ? 'DISPATCHING...' : 'ESCALATE TO EMS'}
+            </button>
+         </div>
+      </div>
+
+      {incident.aiTriageInstructions && (
+         <div className="ai-brief-box">
+            <div className="ai-header"><Activity size={14} /> SYSTEM DIRECTIVE (AI)</div>
+            <p>{incident.aiTriageInstructions}</p>
+         </div>
+      )}
+
       {incident.uploadedMediaUrl && (
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--panel-border)' }}>
-          <a
-            href={`${API_BASE}${incident.uploadedMediaUrl}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--accent-blue)' }}
-          >
-            <FileAudio size={14} /> View Attached Evidence
-          </a>
-        </div>
+        <a href={`${API_BASE}${incident.uploadedMediaUrl}`} target="_blank" rel="noreferrer" className="media-link">
+          <FileAudio size={14} /> View External Intelligence Evidence
+        </a>
       )}
     </div>
   );

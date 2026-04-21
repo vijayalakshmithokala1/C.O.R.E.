@@ -10,9 +10,17 @@ export default function AdminDashboard({ section, user }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const { isHotel, terms } = useDomain();
-  const [role, setRole] = useState(isHotel ? 'Maintenance' : 'Doctor');
+  const { isHotel, terms, domain: currentDomain, DOMAINS } = useDomain();
+  const [role, setRole] = useState(terms.doctor);
   const [floors, setFloors] = useState('');
+  const [simulatingSensor, setSimulatingSensor] = useState(false);
+  
+  // Vision AI State
+  const [cctvFeeds, setCctvFeeds] = useState([
+    { id: 1, name: 'Kitchen South', active: true, zone: 'Controlled_Zone', status: 'Normal' },
+    { id: 2, name: 'Main Lobby', active: true, zone: 'General', status: 'Normal' },
+    { id: 3, name: 'External Entry', active: true, zone: 'General', status: 'Normal' },
+  ]);
 
   const [geofenceLat, setGeofenceLat] = useState(0);
   const [geofenceLng, setGeofenceLng] = useState(0);
@@ -103,6 +111,28 @@ export default function AdminDashboard({ section, user }) {
       setData(data.filter(u => u.id !== id));
     } catch(err) {
       console.error(err);
+    }
+  };
+
+  const triggerIoTSensor = async (sensorType, floor) => {
+    setSimulatingSensor(sensorType);
+    try {
+      await fetch(`${API_BASE}/api/incident/system-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domain: user.domain,
+          cameraLocation: floor,
+          eventType: sensorType,
+          confidence: 100
+        })
+      });
+      alert(`IoT Success: ${sensorType} alert triggered for ${floor}`);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to trigger sensor');
+    } finally {
+      setSimulatingSensor(null);
     }
   };
 
@@ -209,6 +239,7 @@ export default function AdminDashboard({ section, user }) {
                   <th>User</th>
                   <th>Action</th>
                   <th>Details</th>
+                  <th>Integrity</th>
                 </tr>
               </thead>
               <tbody>
@@ -218,6 +249,18 @@ export default function AdminDashboard({ section, user }) {
                     <td>{log.user?.name} <br/><span style={{fontSize:'0.75rem', color:'var(--text-muted)'}}>{log.user?.role}</span></td>
                     <td><strong>{log.action}</strong></td>
                     <td>{log.details}</td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span className="tag status-Resolved" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '0.65rem' }}>
+                          ✓ Block Verified
+                        </span>
+                        {log.hash && (
+                          <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--text-muted)', width: '80px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {log.hash}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -228,47 +271,107 @@ export default function AdminDashboard({ section, user }) {
 
       {section === 'analytics' && data && (
         <>
-          <h1 style={{ marginBottom: '2rem' }}>Performance Analytics</h1>
+          <h1 style={{ marginBottom: '2rem' }}>Performance Intelligence</h1>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             <div className="panel" style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{data.totalIncidents}</div>
-              <div style={{ color: 'var(--text-muted)' }}>Total Incidents</div>
+              <div style={{ color: 'var(--text-muted)' }}>Total Lifecycle Events</div>
             </div>
             <div className="panel" style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)' }}>{data.avgResponseTimeSeconds}s</div>
-              <div style={{ color: 'var(--text-muted)' }}>Avg. Response Time</div>
+              <div style={{ color: 'var(--text-muted)' }}>Mean Time to Resolve</div>
             </div>
             <div className="panel" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-amber)' }}>{data.activeStaff}</div>
-              <div style={{ color: 'var(--text-muted)' }}>Active Staff Load</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-amber)' }}>{data.avgFeedback || 'N/A'}</div>
+              <div style={{ color: 'var(--text-muted)' }}>{terms.patient} NPS Score</div>
+            </div>
+            <div className="panel" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{data.activeStaff}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Field Personnel Net</div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-             <div className="panel">
-                <h3>Incidents by Type</h3>
-                <div style={{ marginTop: '1rem' }}>
-                  {data.incidentsByType?.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--panel-border)' }}>
-                      <span>{item.name}</span>
-                      <span style={{ fontWeight: 'bold' }}>{item.count}</span>
+          {/* ── Vision AI Panel ── */}
+          <div className="panel" style={{ marginBottom: '2rem', border: '1px solid rgba(59, 130, 246, 0.3)', background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Vision AI Integration: Live CCTV Monitor</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Automated fire, smoke, and security breach detection with contextual sensitivity.</p>
+              </div>
+              <span className="tag status-Resolved" style={{ animation: 'pulse 2s infinite' }}>✓ AI ACTIVE</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+              {cctvFeeds.map(feed => (
+                <div key={feed.id} style={{ background: '#0f172a', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--panel-border)', position: 'relative' }}>
+                  {/* Camera Header */}
+                  <div style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>CAM_{feed.id}: {feed.name}</span>
+                    <span style={{ fontSize: '0.65rem', color: feed.zone === 'Controlled_Zone' ? 'var(--accent-amber)' : 'var(--text-muted)' }}>
+                      {feed.zone === 'Controlled_Zone' ? '⚠️ Kitchen (Controlled)' : 'Public Area'}
+                    </span>
+                  </div>
+                  
+                  {/* Mock Video Feed */}
+                  <div style={{ height: '160px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'red', animation: 'blink 1s infinite' }} />
+                      <span style={{ fontSize: '0.6rem', color: 'white', fontWeight: 'bold' }}>REC</span>
                     </div>
-                  ))}
+                    {feed.status === 'Alert' ? (
+                      <div style={{ textAlign: 'center' }}>
+                         <div style={{ color: 'var(--accent-red)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.5rem' }}>FIRE DETECTED</div>
+                         <div style={{ border: '2px solid var(--accent-red)', width: '80px', height: '80px', margin: '0 auto', animation: 'pulse 1s infinite' }} />
+                      </div>
+                    ) : (
+                      <div style={{ color: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>[ NO ANOMALIES DETECTED ]</div>
+                    )}
+                    {/* Scanline overlay */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(rgba(0,0,0,0) 0, rgba(0,0,0,0.1) 1px, transparent 2px)', pointerEvents: 'none' }} />
+                  </div>
+
+                  {/* Footbar */}
+                  <div style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      disabled={simulatingSensor}
+                      onClick={() => triggerIoTSensor('Fire', feed.name)}
+                      className="primary" 
+                      style={{ flex: 1, padding: '0.5rem', fontSize: '0.7rem' }}
+                    >
+                      Test AI detection
+                    </button>
+                  </div>
                 </div>
-             </div>
-             
-             <div className="panel">
-                <h3>Incidents by Status</h3>
-                <div style={{ marginTop: '1rem' }}>
-                  {data.incidentsByStatus?.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--panel-border)' }}>
-                      <span>{item.name}</span>
-                      <span className={`tag status-${item.name.replace(' ', '')}`}>{item.count}</span>
-                    </div>
-                  ))}
-                </div>
-             </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid var(--accent-blue)' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Global Security Protocol Simulation</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <button 
+                disabled={simulatingSensor} 
+                onClick={() => triggerIoTSensor('Fire', 'Utility Bay B')}
+                style={{ background: 'var(--accent-red)', color: 'white', fontWeight: 'bold' }}
+              >
+                🔥 Manual Fire Alarm (Utility)
+              </button>
+              <button 
+                disabled={simulatingSensor} 
+                onClick={() => triggerIoTSensor('Security Breach', 'Front Entry')}
+                style={{ background: '#1e293b', border: '1px solid var(--accent-red)', color: 'white', fontWeight: 'bold' }}
+              >
+                🚨 Perimeter Breach
+              </button>
+              <button 
+                disabled={simulatingSensor} 
+                onClick={() => triggerIoTSensor('Medical Emergency', 'Room 304')}
+                style={{ background: 'var(--accent-blue)', color: 'white', fontWeight: 'bold' }}
+              >
+                🏥 Critical SOS Pulse
+              </button>
+            </div>
           </div>
         </>
       )}

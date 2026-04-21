@@ -7,8 +7,8 @@ import API_BASE from '../utils/api';
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { domain, isHotel } = useDomain();
-  const [role, setRole] = useState(isHotel ? 'Hotel Manager' : 'Administrator');
+  const { domain, setDomain, terms, DOMAINS } = useDomain();
+  const [role, setRole] = useState(terms.doctor);
   const [error, setError] = useState('');
   const [isSetupMode, setIsSetupMode] = useState(false);
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function Login() {
         const res = await fetch(`${API_BASE}/api/auth/setup-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, name: isHotel ? 'Hotel Admin' : 'System Admin', domain })
+          body: JSON.stringify({ username, password, name: `${terms.label} Admin`, domain })
         });
         if (!res.ok) {
           const data = await res.json();
@@ -58,32 +58,59 @@ export default function Login() {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: isHotel ? 'var(--accent-amber)' : 'var(--accent-red)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--accent-red)' }}>
           <ShieldAlert size={48} />
         </div>
-        <h1 className="auth-title">C.O.R.E. <span>{isHotel ? 'Hotel' : 'Hospital'}</span></h1>
+        <h1 className="auth-title">C.O.R.E. <span>{terms.label}</span></h1>
         
         {error && <div style={{ color: 'var(--accent-red)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
 
         <form onSubmit={handleLogin}>
           {!isSetupMode && (
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              {isHotel ? (
-                <>
-                  <option value="Hotel Manager">Hotel Manager</option>
-                  <option value="Security">Security</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Front Desk">Front Desk</option>
-                </>
-              ) : (
-                <>
-                  <option value="Administrator">Administrator</option>
-                  <option value="Doctor">Doctor</option>
-                  <option value="Nurse">Nurse</option>
-                  <option value="Receptionist">Receptionist</option>
-                </>
-              )}
-            </select>
+            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <label className="label" style={{ fontSize: '0.7rem' }}>Select Management Sector</label>
+              <select value={domain} onChange={(e) => setDomain(e.target.value)} style={{ marginBottom: 0 }}>
+                {Object.keys(DOMAINS).map(key => (
+                  <option key={key} value={key}>{DOMAINS[key].label}</option>
+                ))}
+              </select>
+              
+              <label className="label" style={{ fontSize: '0.7rem' }}>Operational Role</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} style={{ marginBottom: 0 }}>
+                {domain === 'HOSPITAL' && (
+                  <>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Nurse">Nurse</option>
+                    <option value="Receptionist">Receptionist</option>
+                  </>
+                )}
+                {domain === 'HOTEL' && (
+                  <>
+                    <option value="Hotel Manager">Hotel Manager</option>
+                    <option value="Security">Security</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Front Desk">Front Desk</option>
+                  </>
+                )}
+                {domain === 'AIRPORT' && (
+                  <>
+                    <option value="Duty Manager">Duty Manager</option>
+                    <option value="Security">Security</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Help Desk">Help Desk</option>
+                  </>
+                )}
+                {domain === 'MALL' && (
+                  <>
+                    <option value="Admin">Mall Admin</option>
+                    <option value="Security">Security</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Information">Information Desk</option>
+                  </>
+                )}
+              </select>
+            </div>
           )}
 
           <input 
@@ -101,13 +128,13 @@ export default function Login() {
             required 
           />
           <button type="submit" className="primary" style={{ width: '100%' }}>
-            {isSetupMode ? 'Initialize System Admin' : 'Secure Login'}
+            {isSetupMode ? 'Initialize Sector Admin' : 'Secure Secure Access'}
           </button>
         </form>
 
         <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: 'var(--text-muted)' }}>
-            <ArrowLeft size={12} /> Change Domain
+            <ArrowLeft size={12} /> Exit Portal
           </Link>
           <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setIsSetupMode(!isSetupMode)}>
             {isSetupMode ? 'Back to Login' : 'First Time Setup?'}

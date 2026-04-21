@@ -36,14 +36,9 @@ function getDistance(lat1, lon1, lat2, lon2) {
 const INCIDENT_TYPES = [
   { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Requires immediate medical attention' },
   { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
-  { value: 'Other', emoji: '⚡', label: 'Other Emergency', color: '#3b82f6', desc: 'Security, structural, or other threat' },
-];
-
-const FLOORS_HOSPITAL = ['Floor 1', 'Floor 2 — ICU', 'Floor 3 — General Ward', 'Floor 4 — Maternity', 'Ground Floor — Emergency'];
-const FLOORS_HOTEL = ['Lobby', 'Floor 1', 'Floor 2', 'Floor 3', 'Roof', 'Parking / Basement'];
-
 export default function PatientPortal() {
   const { sessionId } = useParams();
+  const { domain: contextDomain, terms, DOMAINS } = useDomain();
 
   // Session & config
   const [session, setSession] = useState(undefined); // undefined = loading, null = invalid
@@ -56,7 +51,6 @@ export default function PatientPortal() {
   // Form
   const [step, setStep] = useState('form'); // 'form' | 'success'
   const [type, setType] = useState('Medical Emergency');
-  const [locationType, setLocationType] = useState('Room');
   const [locationDetails, setLocationDetails] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
@@ -64,25 +58,43 @@ export default function PatientPortal() {
   const [formError, setFormError] = useState('');
   const [activeIncident, setActiveIncident] = useState(null);
   const [timeSinceCreation, setTimeSinceCreation] = useState(0);
+  const [language, setLanguage] = useState('en');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
 
-  const isHotel = session?.domain === 'HOTEL';
-  const terms = {
-    patient: isHotel ? 'Guest' : 'Patient',
-    medical: isHotel ? 'Maintenance Issue' : 'Medical Emergency',
-    hospital: isHotel ? 'Hotel' : 'Hospital'
-  };
+  // Video Triage
+  const [streaming, setStreaming] = useState(false);
+  const videoRef = useRef(null);
 
-  const INCIDENT_TYPES_DYNAMIC = isHotel ? [
+  const LANGUAGES = [
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+    { code: 'es', label: 'Español', flag: '🇪🇸' },
+    { code: 'te', label: 'తెలుగు', flag: '🇮🇳' }
+  ];
+
+  const INCIDENT_TYPES_DYNAMIC = (session?.domain === 'HOTEL' || contextDomain === 'HOTEL') ? [
     { value: 'Maintenance Issue', emoji: '🔧', label: 'Maintenance', color: '#f59e0b', desc: 'Plumbing, electrical, or structural issue' },
     { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
     { value: 'Security Breach', emoji: '🚨', label: 'Security', color: '#dc2626', desc: 'Security incident or intruder' },
     { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#3b82f6', desc: 'Medical incident requiring staff' },
     { value: 'Other', emoji: '⚡', label: 'Other', color: '#8b5cf6', desc: 'Other assistance needed' },
+  ] : (session?.domain === 'AIRPORT' ? [
+    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Passenger medical distress' },
+    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Smoke or fire in terminal' },
+    { value: 'Security Breach', emoji: '🚨', label: 'Security Threat', color: '#dc2626', desc: 'Unattended baggage or intruder' },
+    { value: 'Other', emoji: '⚡', label: 'Operations Alert', color: '#3b82f6', desc: 'Other terminal emergency' },
+  ] : (session?.domain === 'MALL' ? [
+    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Shopper medical incident' },
+    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Smoke in shop or food court' },
+    { value: 'Security Breach', emoji: '🚨', label: 'Security Alert', color: '#dc2626', desc: 'Theft or security threat' },
+    { value: 'Maintenance Issue', emoji: '🔧', label: 'Maintenance', color: '#3b82f6', desc: 'Leak or power failure' },
   ] : [
     { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Requires immediate medical attention' },
     { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
     { value: 'Other', emoji: '⚡', label: 'Other Emergency', color: '#3b82f6', desc: 'Security, structural, or other threat' },
-  ];
+  ]));
 
   // Emergency alert from staff buzz
   const [emergencyAlert, setEmergencyAlert] = useState(null);
@@ -90,6 +102,27 @@ export default function PatientPortal() {
   // Socket
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // ─── Video Stream Simulation ───────────────────────────────────
+  const startVideoStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setStreaming(true);
+      socketRef.current.emit('incident_video_start', { incidentId: activeIncident.id, sessionId });
+    } catch (err) {
+      alert("Camera access required for Video Triage simulation.");
+    }
+  };
+
+  const stopVideoStream = () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+      videoRef.current.srcObject = null;
+    }
+    setStreaming(false);
+    socketRef.current.emit('incident_video_stop', { incidentId: activeIncident.id });
+  };
 
   // ─── Socket connection ──────────────────────────────────────────
   useEffect(() => {
@@ -102,16 +135,11 @@ export default function PatientPortal() {
     document.addEventListener('click', unlock, { once: true });
 
     socket.on('connect', () => {
-      // we only know session id. The domain comes later.
-      // But we can join patient_${sessionId}
       socket.emit('join_room', `patient_${sessionId}`);
-      // In a real app we'd wait for session load to join `patients_${session.domain}`
-      // For now we will join it after session loads in a separate effect
     });
 
     socket.on('emergency_buzz', (data) => {
       setEmergencyAlert(data.message || 'CRITICAL EMERGENCY — Please follow staff instructions.');
-      // 🔔 Play loud klaxon alarm
       playEmergencyBuzzAlarm();
     });
 
@@ -128,16 +156,17 @@ export default function PatientPortal() {
 
     return () => {
       socket.disconnect();
-      stopEmergencyBuzzAlarm(); // Stop alarm if leaving
+      stopEmergencyBuzzAlarm();
       document.removeEventListener('touchstart', unlock);
       document.removeEventListener('click', unlock);
+      if (streaming) stopVideoStream();
     };
   }, [sessionId]);
 
   useEffect(() => {
     if (session && socketRef.current) {
       socketRef.current.emit('join_room', `patients_${session.domain}`);
-      socketRef.current.emit('join_room', `patient_${sessionId}`); // Dedicated room for feedback
+      socketRef.current.emit('join_room', `patient_${sessionId}`);
     }
   }, [session]);
 
@@ -162,7 +191,6 @@ export default function PatientPortal() {
       })
       .then((data) => {
         setSession(data);
-        // Also fetch config with correct domain
         fetch(`${API_BASE}/api/session/config?domain=${data.domain}`)
           .then((r) => r.json())
           .then((cfg) => setConfig(cfg))
@@ -174,19 +202,15 @@ export default function PatientPortal() {
   // ─── Geolocation check ─────────────────────────────────────────
   useEffect(() => {
     if (!config) return;
-
-    // If geofence is not configured (all zeros), bypass the check
     if (config.geofenceLat === 0 && config.geofenceLng === 0) {
       setGeoStatus('bypass');
       return;
     }
-
     if (!navigator.geolocation) {
       setGeoStatus('denied');
       setGeoMessage('Geolocation is not supported by your browser.');
       return;
     }
-
     const check = () => {
       setGeoStatus('checking');
       navigator.geolocation.getCurrentPosition(
@@ -206,7 +230,6 @@ export default function PatientPortal() {
         { maximumAge: 30000, timeout: 10000 }
       );
     };
-
     check();
     window.addEventListener('focus', check);
     return () => window.removeEventListener('focus', check);
@@ -216,19 +239,16 @@ export default function PatientPortal() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-
     const canSubmit = geoStatus === 'ok' || geoStatus === 'bypass';
     if (!canSubmit) return;
     if (!description.trim()) { setFormError('Please provide a description.'); return; }
-
     setSubmitting(true);
     const fd = new FormData();
     fd.append('type', type);
     fd.append('description', description.trim());
     fd.append('sessionId', sessionId);
-    fd.append('floor', `Room ${locationDetails}`.trim());
+    fd.append('floor', `Location: ${locationDetails}`.trim());
     if (file) fd.append('media', file);
-
     try {
       const res = await fetch(`${API_BASE}/api/incident`, { method: 'POST', body: fd });
       if (res.ok) {
@@ -246,260 +266,138 @@ export default function PatientPortal() {
     }
   };
 
-  const selectedType = INCIDENT_TYPES_DYNAMIC.find((t) => t.value === type) || INCIDENT_TYPES_DYNAMIC[0];
+  const handleFeedback = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/api/incident/${activeIncident.id}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: feedbackRating, comment: feedbackComment })
+      });
+      if (res.ok) setFeedbackSubmitted(true);
+    } catch (err) {
+      console.error('Feedback error:', err);
+    }
+  };
 
-  // ─── Render states ──────────────────────────────────────────────
+  if (session === undefined) return <div className="portal-shell"><div className="portal-loading"><div className="portal-spinner" /><p>Verifying session...</p></div></div>;
+  if (session === null) return <div className="portal-shell"><div className="portal-invalid"><div className="portal-invalid-icon"><AlertTriangle size={40} /></div><h2>Session Ended</h2><p>This QR code is no longer active. You have been discharged or the session expired.</p><p className="portal-invalid-sub">Thank you for visiting. We wish you safety.</p></div></div>;
 
-  // Loading
-  if (session === undefined) {
-    return (
-      <div className="portal-shell">
-        <div className="portal-loading">
-          <div className="portal-spinner" />
-          <p>Verifying session...</p>
-        </div>
-      </div>
-    );
-  }
+  const isResolved = activeIncident?.status === 'Resolved';
 
-  // Invalid / discharged
-  if (session === null) {
-    return (
-      <div className="portal-shell">
-        <div className="portal-invalid">
-          <div className="portal-invalid-icon">
-            <AlertTriangle size={40} />
-          </div>
-          <h2>Session Ended</h2>
-          <p>This QR code is no longer active. You have been discharged or the session expired.</p>
-          <p className="portal-invalid-sub">Thank you for visiting. We wish you a speedy recovery.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Main portal
   return (
     <div className="portal-shell">
-
-      {/* ── Emergency Buzz Overlay ── */}
       {emergencyAlert && (
         <div className="portal-buzz-overlay">
           <div className="portal-buzz-card">
-            <div className="portal-buzz-icon">
-              <AlertCircle size={56} />
-            </div>
+            <div className="portal-buzz-icon"><AlertCircle size={56} /></div>
             <h1>Emergency Alert</h1>
             <p>{emergencyAlert}</p>
-            <div className="portal-buzz-instruction">
-              Follow all staff instructions immediately.<br />
-              Proceed to your nearest exit or muster point.
-            </div>
-            <button className="portal-buzz-dismiss" onClick={() => {
-              setEmergencyAlert(null);
-              stopEmergencyBuzzAlarm();
-            }}>
-              ✓ Acknowledge
-            </button>
+            <div className="portal-buzz-instruction">Follow all staff instructions immediately.<br />Proceed to your nearest exit or muster point.</div>
+            <button className="portal-buzz-dismiss" onClick={() => { setEmergencyAlert(null); stopEmergencyBuzzAlarm(); }}>✓ Acknowledge</button>
           </div>
         </div>
       )}
 
-      {/* ── Header ── */}
       <header className="portal-header-bar">
-        <div className="portal-logo">
-          <span className="portal-logo-core">C.O.R.E.</span>
-          <span className="portal-logo-sub">{terms.patient} Portal</span>
-        </div>
+        <div className="portal-logo"><span className="portal-logo-core">C.O.R.E.</span><span className="portal-logo-sub">{terms.patient} Portal</span></div>
         <div className="portal-patient-badge">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '0.5rem' }}>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '0.2rem', fontSize: '0.75rem', background: 'transparent', border: 'none', color: 'var(--text-main)' }}>
+              {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.label}</option>)}
+            </select>
+          </div>
           <span className="portal-patient-code">{session.sessionCode}</span>
           <GeoIndicator status={geoStatus} />
         </div>
       </header>
 
-      {/* ── Body ── */}
       <main className="portal-body">
-
-        {/* Success state */}
         {step === 'success' && activeIncident && (
           <div className="portal-success-card">
-            <div className="portal-success-icon">
-              <CheckCircle size={48} color={activeIncident.status === 'Resolved' ? 'var(--success)' : 'var(--accent-amber)'} />
-            </div>
-            <h2>{activeIncident.status === 'Resolved' ? 'Emergency Resolved' : 'Report Received'}</h2>
+            <div className="portal-success-icon"><CheckCircle size={48} color={isResolved ? 'var(--success)' : 'var(--accent-amber)'} /></div>
+            <h2>{isResolved ? 'Situation Resolved' : 'SOS Transmitted'}</h2>
             
-            {activeIncident.status === 'Pending' && (
-               <p style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>Alert broadcasted to all staff. Awaiting assignment...</p>
-            )}
+            {activeIncident.status === 'Pending' && <p style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>Alert broadcasted to all {terms.label} staff. Help is coming.</p>}
             
             {(activeIncident.status === 'Reviewed' || activeIncident.status === 'In Progress') && (
                <div style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--accent-blue)' }}>Help is on the way!</p>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-                    Assigned to: <strong style={{ color: 'var(--text-main)' }}>{activeIncident.assignedToName || 'Staff Member'}</strong>
-                  </p>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--accent-blue)' }}>Responder en route!</p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>Assigned: <strong style={{ color: 'var(--text-main)' }}>{activeIncident.assignedToName || 'Response Team'}</strong></p>
                </div>
             )}
 
-            {activeIncident.status === 'Resolved' && (
-               <p>The situation has been marked as resolved by staff. Stay safe!</p>
+            {/* Video Triage Section */}
+            {!isResolved && activeIncident.status !== 'Pending' && (
+              <div style={{ margin: '1.5rem 0', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', fontWeight: 'bold', marginBottom: '1rem' }}>
+                  <Video size={18} /> High-Fidelity Video Triage
+                </div>
+                {streaming ? (
+                  <div style={{ position: 'relative' }}>
+                    <video ref={videoRef} autoPlay playsInline muted className="live-camera-feed" style={{ width: '100%', borderRadius: '8px', background: '#000', minHeight: '200px' }} />
+                    <div className="stream-badge">LIVE FEED ACTIVE</div>
+                    <button onClick={stopVideoStream} className="danger" style={{ width: '100%', marginTop: '0.75rem' }}>Disconnect Video</button>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Enable video for remote visual assessment by {terms.label} staff.</p>
+                    <button onClick={startVideoStream} className="primary" style={{ width: '100%', background: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <Video size={18} /> Start Video Stream
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
-            {timeSinceCreation > 180000 && activeIncident.status !== 'Resolved' && (
-               <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-                  <strong>Still waiting for help?</strong> It's been over 3 minutes.
-                  <button className="primary" style={{ width: '100%', marginTop: '0.5rem', background: '#ef4444' }} onClick={() => { setActiveIncident(null); setStep('form'); }}>Escalate / Send Another Alert</button>
+            {isResolved && (
+               <div className="portal-feedback-section">
+                  <p>Incident resolved. Thank you for your patience.</p>
+                  {!feedbackSubmitted ? (
+                    <div style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: '8px', marginTop: '1rem', border: '1px solid var(--panel-border)' }}>
+                       <p style={{ fontWeight: 'bold' }}>Rate our response speed & quality:</p>
+                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', margin: '0.5rem 0' }}>
+                          {[1,2,3,4,5].map(num => <button key={num} type="button" onClick={() => setFeedbackRating(num)} style={{ padding: '0.5rem', background: feedbackRating >= num ? 'var(--accent-amber)' : 'var(--bg-color)', border: '1px solid var(--panel-border)', borderRadius: '4px' }}>⭐</button>)}
+                       </div>
+                       <textarea placeholder="Comments..." value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} style={{ width: '100%', fontSize: '0.85rem', marginBottom: '0.5rem' }} />
+                       <button onClick={handleFeedback} className="primary" style={{ width: '100%', padding: '0.5rem' }}>Submit Feedback</button>
+                    </div>
+                  ) : <p style={{ color: 'var(--success)', fontWeight: 'bold' }}>Feedback Sent. Thank you!</p>}
                </div>
             )}
 
-            <button
-              className="portal-btn-outline"
-              style={{ marginTop: '1rem' }}
-              onClick={() => { setStep('form'); setDescription(''); setFile(null); setActiveIncident(null); setTimeSinceCreation(0); }}
-            >
-              Submit Another Report
-            </button>
+            {activeIncident.aiTriageInstructions && (
+               <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-blue)', padding: '1rem', borderRadius: '8px', margin: '1rem 0', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', marginBottom: '0.5rem', fontWeight: 'bold' }}><AlertCircle size={18} /> AI First-Aid Instructions</div>
+                  <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5 }}>{activeIncident.aiTriageInstructions}</p>
+               </div>
+            )}
+
+            <button className="portal-btn-outline" style={{ marginTop: '1rem' }} onClick={() => { setStep('form'); setDescription(''); setFile(null); setActiveIncident(null); setTimeSinceCreation(0); if (streaming) stopVideoStream(); }}>Report Another Emergency</button>
           </div>
         )}
 
-        {/* Geofence block */}
         {step === 'form' && (geoStatus === 'outside' || geoStatus === 'denied') && (
           <div className="portal-geo-block">
-            <div className="portal-geo-icon">
-              {geoStatus === 'denied' ? <WifiOff size={40} /> : <MapPin size={40} />}
-            </div>
-            <h3>{geoStatus === 'denied' ? 'Location Access Required' : `Outside ${terms.hospital} Perimeter`}</h3>
+            <div className="portal-geo-icon">{geoStatus === 'denied' ? <WifiOff size={40} /> : <MapPin size={40} />}</div>
+            <h3>{geoStatus === 'denied' ? 'Location Access Required' : `Outside ${terms.label} Perimeter`}</h3>
             <p>{geoMessage}</p>
-            {geoStatus === 'denied' && (
-              <p className="portal-geo-hint">Enable location access in your browser settings, then refresh this page.</p>
-            )}
           </div>
         )}
 
-        {/* Checking */}
-        {step === 'form' && geoStatus === 'checking' && (
-          <div className="portal-geo-checking">
-            <Loader size={28} className="spin-icon" />
-            <p>Verifying your location...</p>
-          </div>
-        )}
+        {step === 'form' && geoStatus === 'checking' && <div className="portal-geo-checking"><Loader size={28} className="spin-icon" /><p>Verifying location...</p></div>}
 
-        {/* Main form */}
         {step === 'form' && (geoStatus === 'ok' || geoStatus === 'bypass') && (
           <form className="portal-form" onSubmit={handleSubmit}>
-
-            <div className="portal-section-label">
-              <FileText size={14} /> Incident Type
-            </div>
-
-            {/* Type selector pills */}
+            <div className="portal-section-label"><FileText size={14} /> Emergency Category</div>
             <div className="portal-type-grid">
               {INCIDENT_TYPES_DYNAMIC.map((t) => (
-                <button
-                  key={t.value}
-                  type="button"
-                  className={`portal-type-pill ${type === t.value ? 'active' : ''}`}
-                  style={{ '--pill-color': t.color }}
-                  onClick={() => setType(t.value)}
-                >
-                  <span className="pill-emoji">{t.emoji}</span>
-                  <span className="pill-label">{t.label}</span>
-                  <span className="pill-desc">{t.desc}</span>
+                <button key={t.value} type="button" className={`portal-type-pill ${type === t.value ? 'active' : ''}`} style={{ '--pill-color': t.color }} onClick={() => setType(t.value)}>
+                  <span className="pill-emoji">{t.emoji}</span><span className="pill-label">{t.label}</span><span className="pill-desc">{t.desc}</span>
                 </button>
               ))}
             </div>
 
-            {/* Room Number Location Selection */}
-            <div className="portal-field">
-              <label className="portal-section-label">
-                <MapPin size={14} /> Nearest Room Number
-              </label>
-              <input 
-                type="text" 
-                className="portal-input"
-                placeholder="e.g., 402, 3B, Lobby"
-                value={locationDetails}
-                onChange={(e) => setLocationDetails(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div className="portal-field">
-              <label className="portal-section-label">
-                <FileText size={14} /> Description
-              </label>
-              <textarea
-                className="portal-textarea"
-                rows={4}
-                placeholder={
-                  type === 'Medical Emergency'
-                    ? 'Describe symptoms or the nature of the emergency...'
-                    : type === 'Fire'
-                    ? 'Describe what you see — smoke location, scale...'
-                    : 'Describe the emergency situation...'
-                }
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* File upload */}
-            <div className="portal-field">
-              <label className="portal-section-label">
-                <Camera size={14} /> Attach Photo / Video (Optional)
-              </label>
-              <label className="portal-file-label" onClick={() => fileInputRef.current?.click()}>
-                <Camera size={20} />
-                {file ? (
-                  <span>{file.name}</span>
-                ) : (
-                  <span>Tap to attach evidence</span>
-                )}
-                {file && (
-                  <button
-                    type="button"
-                    className="portal-file-clear"
-                    onClick={(e) => { e.stopPropagation(); setFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                style={{ display: 'none' }}
-                accept="image/*,video/*"
-                onChange={(e) => setFile(e.target.files[0])}
-              />
-            </div>
-
-            {formError && (
-              <div className="portal-form-error">
-                <AlertTriangle size={14} /> {formError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="portal-submit-btn"
-              disabled={submitting}
-              style={{
-                 '--accent': '#dc2626',
-                 backgroundColor: '#dc2626',
-                 color: 'white',
-                 fontSize: '1.2rem',
-                 fontWeight: 'bold',
-                 padding: '1.5rem',
-                 boxShadow: '0 8px 30px rgba(220, 38, 38, 0.4)',
-                 animation: 'pulse 2s infinite'
-              }}
-            >
-              {submitting ? (
-                <>
-                  <Loader size={24} className="spin-icon" /> SENDING SOS...
                 </>
               ) : (
                 <>

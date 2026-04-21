@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireRole } = require('./auth');
+const { generateLogHash } = require('../utils/crypto');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -11,12 +12,58 @@ router.use(authenticateToken);
 // Admin-only endpoints - allow both Administrator (Hospital) and Hotel Manager (Hotel)
 router.use(requireRole(['Administrator', 'Hotel Manager']));
 
+/**
+ * High-utility helper to create a "Block" in our audit chain.
+ */
+async function createChainedLog(action, details, userId, domain) {
+  // Find the last log to get the previousHash
+  const lastLog = await prisma.auditLog.findFirst({
+    where: { user: { domain: domain } },
+    orderBy: { timestamp: 'desc' }
+  });
+  
+  const prevHash = lastLog ? lastLog.hash : 'GENESIS_BLOCK';
+  const newHash = generateLogHash(action, details, prevHash);
+
+  return await prisma.auditLog.create({
+    data: {
+      action,
+      details,
+      userId,
+      hash: newHash,
+      previousHash: prevHash
+    }
+  });
+}
+
 router.get('/staff', async (req, res) => {
   const staff = await prisma.user.findMany({
     where: { domain: req.user.domain },
     select: { id: true, username: true, name: true, role: true, floors: true, createdAt: true }
   });
   res.json(staff);
+});
+
+router.get('/resources', async (req, res) => {
+  const resources = await prisma.resource.findMany({
+    where: { domain: req.user.domain }
+  });
+  res.json(resources);
+});
+
+router.post('/resources', async (req, res) => {
+  const { name, type, floor, lat, lng } = req.body;
+  const resource = await prisma.resource.create({
+    data: {
+      name,
+      type,
+      floor,
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      domain: req.user.domain
+    }
+  });
+  res.json(resource);
 });
 
 router.post('/staff', async (req, res) => {
@@ -38,13 +85,7 @@ router.post('/staff', async (req, res) => {
     }
   });
 
-  await prisma.auditLog.create({
-    data: {
-      action: 'Create Staff',
-      details: `Created staff member ${username} with role ${role}`,
-      userId: req.user.id
-    }
-  });
+  await createChainedLog('Create Staff', `Created staff member ${username} with role ${role}`, req.user.id, req.user.domain);
 
   res.json({ id: user.id, username: user.username, role: user.role });
 });
@@ -56,13 +97,7 @@ router.delete('/staff/:id', async (req, res) => {
 
   await prisma.user.delete({ where: { id } });
   
-  await prisma.auditLog.create({
-    data: {
-      action: 'Delete Staff',
-      details: `Deleted staff ID ${id}`,
-      userId: req.user.id
-    }
-  });
+  await createChainedLog('Delete Staff', `Deleted staff ID ${id}`, req.user.id, req.user.domain);
 
   res.json({ message: 'Deleted successfully' });
 });
@@ -102,13 +137,7 @@ router.put('/config', async (req, res) => {
     data: { geofenceLat: parseFloat(geofenceLat), geofenceLng: parseFloat(geofenceLng), geofenceRadius: parseInt(geofenceRadius) }
   });
 
-  await prisma.auditLog.create({
-    data: {
-      action: 'Update Config',
-      details: `Geofence updated to ${geofenceLat}, ${geofenceLng} rad:${geofenceRadius}`,
-      userId: req.user.id
-    }
-  });
+  await createChainedLog('Update Config', `Geofence updated to ${geofenceLat}, ${geofenceLng} rad:${geofenceRadius}`, req.user.id, req.user.domain);
 
   res.json(config);
 });
@@ -148,12 +177,32 @@ router.get('/analytics', async (req, res) => {
   // Active staff count
   const activeStaff = await prisma.user.count({ where: { domain: req.user.domain } });
 
+  // Average Feedback
+  const incidentsWithFeedback = await prisma.incident.findMany({
+    where: { domain: req.user.domain, feedbackRating: { not: null } },
+    select: { feedbackRating: true }
+  });
+  let avgFeedback = 0;
+  if (incidentsWithFeedback.length > 0) {
+    avgFeedback = (incidentsWithFeedback.reduce((sum, i) => sum + i.feedbackRating, 0) / incidentsWithFeedback.length).toFixed(1);
+  }
+
+  // Severity Distribution
+  const severityData = await prisma.incident.groupBy({
+    by: ['severityScore'],
+    where: { domain: req.user.domain },
+    _count: { severityScore: true }
+  });
+  const severityDistribution = severityData.map(item => ({ score: item.severityScore, count: item._count.severityScore }));
+
   res.json({
     totalIncidents,
     avgResponseTimeSeconds,
+    avgFeedback,
     activeStaff,
     incidentsByType,
-    incidentsByStatus
+    incidentsByStatus,
+    severityDistribution
   });
 });
 

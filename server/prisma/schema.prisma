@@ -28,6 +28,7 @@ model Session {
   name         String?     // Patient or Guest Name
   domain       String      @default("HOSPITAL")
   active       Boolean     @default(true)
+  language     String      @default("en") // "en", "es", "hi", etc.
   createdAt    DateTime    @default(now())
   dischargedAt DateTime?
   incidents    Incident[]
@@ -40,15 +41,32 @@ model Incident {
   floor            String?         
   uploadedMediaUrl String?
   status           String          @default("Pending") // "Pending", "Reviewed", "In Progress", "Resolved"
+  severityScore    Int             @default(1) // 1-10
+  aiTriageInstructions String?     
+  sentiment        String?         
+  feedbackRating   Int?            
+  feedbackComment  String?         
+  language         String          @default("en")
   isDeleted        Boolean         @default(false)
-  sessionId        String
-  session          Session         @relation(fields: [sessionId], references: [id])
+  sessionId        String?
+  session          Session?        @relation(fields: [sessionId], references: [id])
   domain           String          @default("HOSPITAL")
   assignedToId     Int?
   assignedToName   String?
   assignedTo       User?           @relation(fields: [assignedToId], references: [id])
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+}
+
+model Resource {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   // "AED", "Fire Extinguisher", "Stretcher", "First Aid Kit"
+  floor     String
+  lat       Float
+  lng       Float
+  domain    String   @default("HOSPITAL")
+  createdAt DateTime @default(now())
 }
 
 model SystemConfig {
@@ -61,9 +79,11 @@ model SystemConfig {
 
 model AuditLog {
   id        Int      @id @default(autoincrement())
-  action    String
-  details   String?
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
-  timestamp DateTime @default(now())
+  action       String
+  details      String?
+  hash         String?   // SHA-256 hash of (action + details + prevHash)
+  previousHash String?   // Hash of the previous log entry
+  userId       Int?
+  user         User?     @relation(fields: [userId], references: [id])
+  timestamp    DateTime  @default(now())
 }

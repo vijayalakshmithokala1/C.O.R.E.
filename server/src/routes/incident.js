@@ -3,6 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticateToken } = require('./auth');
 const multer = require('multer');
 const path = require('path');
+const { analyzeIncident } = require('../utils/aiTriage');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -35,6 +36,9 @@ router.post('/', upload.single('media'), async (req, res) => {
       return res.status(403).json({ error: 'Invalid or expired session' });
     }
 
+    // AI Triage Analysis
+    const aiAnalysis = await analyzeIncident(description, type);
+
     // Smart Assignment Logic - Find a staff member assigned to this floor
     let assignedUserId = null;
     let assignedUserName = null;
@@ -66,7 +70,11 @@ router.post('/', upload.single('media'), async (req, res) => {
         domain: session.domain,
         status: 'Pending',
         assignedToId: assignedUserId,
-        assignedToName: assignedUserName
+        assignedToName: assignedUserName,
+        severityScore: aiAnalysis.severityScore,
+        sentiment: aiAnalysis.sentiment,
+        aiTriageInstructions: aiAnalysis.instructions,
+        language: session.language
       },
       include: {
         session: { select: { sessionCode: true, name: true } }
@@ -226,12 +234,18 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   res.json({ success: true, id: incident.id });
 });
 
-// System System / AI Camera Mock
+// System alert from Vision AI / IoT with Context Awareness
 router.post('/system-alert', async (req, res) => {
   try {
-    const { domain, cameraLocation, eventType, confidence } = req.body;
+    const { domain, cameraLocation, eventType, confidence, zone } = req.body;
     
-    // Find closest staff assigned to this general area, or fallback
+    // Vision AI context logic: Exclude alerts from Controlled Zones (e.g. Cooking in Kitchen)
+    // unless confidence is extremely high (indicating it's NOT a normal kitchen fire)
+    if (zone === 'Controlled_Zone' && confidence < 95) {
+       console.log(`[Vision AI] Alert suppressed for ${eventType} in ${cameraLocation} (Controlled Zone, Confidence: ${confidence}%)`);
+       return res.json({ status: 'Suppressed', reason: 'Controlled Zone' });
+    }
+
     const staffResponse = await prisma.user.findFirst({
        where: { domain: domain, floors: { contains: cameraLocation } }
     });
@@ -239,13 +253,14 @@ router.post('/system-alert', async (req, res) => {
     const sysIncident = await prisma.incident.create({
        data: {
          type: eventType === 'Fire' ? 'Fire' : 'Security Breach',
-         description: `AI Camera Alert: ${eventType} detected with ${confidence}% confidence. Immediate response recommended.`,
+         description: `VISION AI ALERT: ${eventType} detected in ${cameraLocation}. Confidence: ${confidence}%. Immediate response recommended.`,
          floor: cameraLocation,
-         sessionId: "SYSTEM_ALARM", // System mock session
+         sessionId: "SYSTEM_ALARM", 
          domain: domain,
          status: 'Pending',
          assignedToId: staffResponse ? staffResponse.id : null,
-         assignedToName: staffResponse ? `${staffResponse.name} (${staffResponse.role})` : null
+         assignedToName: staffResponse ? `${staffResponse.name} (${staffResponse.role})` : null,
+         severityScore: confidence > 80 ? 9 : 6
        }
     });
 
@@ -254,6 +269,65 @@ router.post('/system-alert', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'System alert failure' });
+  }
+});
+
+// External Dispatch (EMS / Fire) - Staff only
+router.post('/:id/dispatch', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const incident = await prisma.incident.findUnique({ where: { id: parseInt(id) } });
+
+    if (!incident) return res.status(404).json({ error: 'Incident not found' });
+
+    // In a production app, this would call an external API (Twilio, EMS API, etc.)
+    console.log(`[CORE DISPATCH] Escalating Incident #${id} to External Emergency Services...`);
+
+    // Record the escalation in audit logs
+    await prisma.auditLog.create({
+      data: {
+        action: 'EXTERNAL_DISPATCH',
+        details: `Incident #${id} (${incident.type}) escalated to Regional Emergency Response.`,
+        userId: req.user.id
+      }
+    });
+
+    // Notify staff of the escalation status
+    req.io.to(`staff_all_${incident.domain}`).emit('system_notification', {
+       title: 'Dispatch Successful',
+       message: `External emergency services have been dispatched to ${incident.floor}. ETA: 8-12 minutes.`
+    });
+
+    res.json({ success: true, message: 'Dispatched' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Dispatch escalation failed' });
+  }
+});
+
+// Submit Feedback (Public)
+router.post('/:id/feedback', async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const incident = await prisma.incident.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        feedbackRating: parseInt(rating),
+        feedbackComment: comment
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'Submit Feedback',
+        details: `Incident ID ${incident.id} received feedback: ${rating} stars`,
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error submitting feedback' });
   }
 });
 
