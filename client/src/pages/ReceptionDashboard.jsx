@@ -101,13 +101,13 @@ export default function ReceptionDashboard({ socket, user }) {
         </head>
         <body>
           <div class="card">
-            <div class="logo">C.O.R.E. ${isHotel ? 'Hotel' : ''}</div>
+            <div class="logo">C.O.R.E. ${terms.label}</div>
             <div class="subtitle">Crisis Operations & Response Ecosystem</div>
             <div>Scan to access your ${terms.patient} Portal</div>
             ${qrRef.current?.outerHTML ?? ''}
             <div class="code">${selectedSession.sessionCode}</div>
             <div class="url">${url}</div>
-            <div class="instr">Keep this QR code with you. Scan it on your mobile device for real-time emergency alerts and to report any incident during your stay.</div>
+            <div class="instr">Keep this QR code with you. Scan it on your mobile device for real-time emergency alerts and to report any incident during your stay at the ${terms.label}.</div>
           </div>
           <script>window.onload = () => window.print();</script>
         </body>
@@ -132,8 +132,8 @@ export default function ReceptionDashboard({ socket, user }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{terms.patient} {isHotel ? 'Check-In' : 'Intake'}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Manage {isHotel ? 'check-ins' : 'intake'} and generate QR access codes</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{terms.patient} Registration</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Manage ${terms.patient.toLowerCase()} check-ins and generate QR access codes</p>
         </div>
         <button
           onClick={handleCheckIn}
@@ -176,7 +176,7 @@ export default function ReceptionDashboard({ socket, user }) {
             </button>
 
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ color: isHotel ? 'var(--accent-amber)' : 'var(--accent-red)', fontWeight: 900, fontSize: '1.25rem', letterSpacing: '0.1em' }}>
+              <div style={{ color: terms.label === 'Hospital' ? 'var(--accent-red)' : 'var(--accent-amber)', fontWeight: 900, fontSize: '1.25rem', letterSpacing: '0.1em' }}>
                 C.O.R.E.
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{terms.patient} Portal Access Code</p>
