@@ -142,28 +142,6 @@ export default function AdminDashboard({ section, user }) {
     }
   };
 
-  const triggerIoTSensor = async (sensorType, floor) => {
-    setSimulatingSensor(sensorType);
-    try {
-      await fetch(`${API_BASE}/api/incident/system-alert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          domain: user.domain,
-          cameraLocation: floor,
-          eventType: sensorType,
-          confidence: 100
-        })
-      });
-      alert(`IoT Success: ${sensorType} alert triggered for ${floor}`);
-    } catch (e) {
-      console.error(e);
-      alert('Failed to trigger sensor');
-    } finally {
-      setSimulatingSensor(null);
-    }
-  };
-
   if (user?.role !== 'Administrator' && user?.role !== 'Hotel Manager') return <div>Unauthorized</div>;
   if (loading) return <div>Loading...</div>;
 
