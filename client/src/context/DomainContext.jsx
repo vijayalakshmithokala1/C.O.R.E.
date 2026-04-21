@@ -67,9 +67,20 @@ export function DomainProvider({ children }) {
     localStorage.setItem('core-domain', newDomain);
   };
 
-  const currentDomain = DOMAINS[domain] || DOMAINS.HOSPITAL;
+  const currentDomainData = DOMAINS[domain] || DOMAINS.HOSPITAL;
+  
+  // Create a unified terms object with safe fallbacks for all sectors
+  const terms = {
+    ...currentDomainData,
+    // Ensure critical keys used with .toLowerCase() always exist
+    label: currentDomainData.label || 'System',
+    patient: currentDomainData.patient || 'User',
+    patients: currentDomainData.patients || 'Users',
+    medical: currentDomainData.medical || 'Operations',
+    sector: currentDomainData.label || 'Facility'
+  };
+
   const isHotel = domain === 'HOTEL';
-  const terms = currentDomain;
 
   return (
     <DomainContext.Provider value={{ domain, setDomain, isHotel, terms, DOMAINS }}>

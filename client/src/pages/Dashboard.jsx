@@ -79,7 +79,7 @@ export default function Dashboard() {
   };
 
   const sendEmergencyBuzz = () => {
-    if (window.confirm(`Send emergency buzz to ALL active users in ${terms.hospital}? This cannot be undone.`)) {
+    if (window.confirm(`Send emergency buzz to ALL active users in the ${terms.label}? This cannot be undone.`)) {
       socket.emit('buzz_triggered', {
         message: 'CRITICAL EMERGENCY: Please follow staff instructions immediately.',
         issuerData: { name: user.name, role: user.role },

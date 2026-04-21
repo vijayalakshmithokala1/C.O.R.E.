@@ -223,7 +223,7 @@ export default function PatientPortal() {
             setGeoStatus('ok');
           } else {
             setGeoStatus('outside');
-            setGeoMessage(`You appear to be ${Math.round(dist)}m from the ${terms.hospital.toLowerCase()}.`);
+            setGeoMessage(`You appear to be ${Math.round(dist)}m from the ${terms.label.toLowerCase()} center.`);
           }
         },
         () => {
@@ -383,7 +383,7 @@ export default function PatientPortal() {
         {step === 'form' && (geoStatus === 'outside' || geoStatus === 'denied') && (
           <div className="portal-geo-block">
             <div className="portal-geo-icon">{geoStatus === 'denied' ? <WifiOff size={40} /> : <MapPin size={40} />}</div>
-            <h3>{geoStatus === 'denied' ? 'Location Access Required' : `Outside ${terms.label} Perimeter`}</h3>
+            <h3>{geoStatus === 'denied' ? 'Location Access Required' : `Outside Area Perimeter`}</h3>
             <p>{geoMessage}</p>
           </div>
         )}
