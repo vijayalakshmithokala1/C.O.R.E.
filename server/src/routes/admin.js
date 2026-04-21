@@ -1,16 +1,16 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
+
 const { authenticateToken, requireRole } = require('./auth');
 const { generateLogHash } = require('../utils/crypto');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 router.use(authenticateToken);
 
-// Admin-only endpoints - allow both Administrator (Hospital) and Hotel Manager (Hotel)
-router.use(requireRole(['Administrator', 'Hotel Manager']));
+// Admin-only endpoints - allow all domain admin roles
+router.use(requireRole(['Administrator', 'Hotel Manager', 'Duty Manager', 'Admin']));
 
 /**
  * High-utility helper to create a "Block" in our audit chain.
@@ -115,12 +115,9 @@ router.get('/audit', async (req, res) => {
 router.get('/config', async (req, res) => {
   let config = await prisma.systemConfig.findFirst({ where: { domain: req.user.domain } });
   if (!config) {
-    // Generate unique ID based on domain to avoid unique constraint clash since it's not auto-incrementing if we rely on default
-    const id = req.user.domain === 'HOTEL' ? 2 : 1;
-    config = await prisma.systemConfig.upsert({ 
-      where: { id },
-      update: {},
-      create: { id, geofenceLat: 0, geofenceLng: 0, geofenceRadius: 200, domain: req.user.domain } 
+    // Create a new config record for this domain - let auto-increment handle the ID
+    config = await prisma.systemConfig.create({
+      data: { geofenceLat: 0, geofenceLng: 0, geofenceRadius: 200, domain: req.user.domain }
     });
   }
   res.json(config);

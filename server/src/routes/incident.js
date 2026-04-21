@@ -1,12 +1,12 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+
 const { authenticateToken } = require('./auth');
 const multer = require('multer');
 const path = require('path');
 const { analyzeIncident } = require('../utils/aiTriage');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // Multer storage for media uploads
 const storage = multer.diskStorage({
@@ -48,7 +48,7 @@ router.post('/', upload.single('media'), async (req, res) => {
         where: {
           domain: session.domain,
           floors: { contains: floor },
-          role: { in: ['Doctor', 'Nurse', 'Maintenance', 'Security', 'Receptionist'] }
+          role: { in: ['Doctor', 'Nurse', 'Maintenance', 'Security', 'Receptionist', 'Operations', 'Help Desk', 'Information'] }
         },
         include: { _count: { select: { assignedIncidents: { where: { status: { in: ['Pending', 'In Progress', 'Reviewed'] } } } } } }
       });
@@ -128,7 +128,12 @@ router.get('/', authenticateToken, async (req, res) => {
   
   let filter = { domain, isDeleted: false, status: { not: 'Resolved' } }; // ALWAYS filter by domain, exclude deleted, and exclude Resolved from feed
 
-  if (role === 'Doctor' || role === 'Nurse' || role === 'Security' || role === 'Maintenance' || role === 'Receptionist') {
+  // Floor-assigned staff roles across all domains
+  const floorStaffRoles = ['Doctor', 'Nurse', 'Security', 'Maintenance', 'Receptionist', 'Operations', 'Help Desk', 'Information'];
+  // Reception/Front-desk equivalent roles across all domains
+  const frontDeskRoles = ['Front Desk', 'Help Desk', 'Information'];
+
+  if (floorStaffRoles.includes(role)) {
     // Parse assigned floors
     const assignedFloors = floors
       ? floors.split(',').map(f => f.trim()).filter(f => f.length > 0)
@@ -142,18 +147,18 @@ router.get('/', authenticateToken, async (req, res) => {
           { assignedToId: req.user.id }
         ];
       } else {
-        // Hotel specific filtering
+        // Hotel / Airport / Mall filtering
         filter.OR = [
           { type: { in: ['Fire', 'Security Breach'] } },
-          { type: { in: ['Maintenance Issue', 'Medical Emergency'] }, floor: { in: assignedFloors } },
+          { type: { in: ['Maintenance Issue', 'Medical Emergency', 'Other'] }, floor: { in: assignedFloors } },
           { assignedToId: req.user.id }
         ];
       }
     }
-  } else if (role === 'Front Desk') {
+  } else if (frontDeskRoles.includes(role)) {
     filter.type = { in: ['Fire', 'Other', 'Security Breach'] };
   }
-  // Administrator / Hotel Manager sees all in their domain
+  // Administrator / Hotel Manager / Duty Manager / Admin sees all in their domain
 
   const incidents = await prisma.incident.findMany({
     where: filter,
@@ -211,7 +216,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 // Soft Delete Incident (Administrator / Hotel Manager Only)
 router.delete('/:id', authenticateToken, async (req, res) => {
   const { role } = req.user;
-  if (role !== 'Administrator' && role !== 'Hotel Manager') {
+  if (role !== 'Administrator' && role !== 'Hotel Manager' && role !== 'Duty Manager' && role !== 'Admin') {
     return res.status(403).json({ error: 'Only Administrators can remove incidents from the feed.' });
   }
 

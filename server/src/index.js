@@ -3,7 +3,7 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const dotenv = require('dotenv');
-const { PrismaClient } = require('@prisma/client');
+
 const path = require('path');
 
 dotenv.config();
@@ -19,7 +19,7 @@ const io = new Server(server, {
   }
 });
 
-const prisma = new PrismaClient();
+const prisma = require('./utils/prisma');
 
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(express.json());

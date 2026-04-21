@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-:root { --bg-color: #0b1120; --panel-bg: #111827; --panel-border: #1f2937; --text-main: #f3f4f6; --text-muted: #9ca3af; --accent-red: #ef4444; --accent-red-glow: rgba(239, 68, 68, 0.4); --accent-amber: #f59e0b; --accent-amber-glow: rgba(245, 158, 11, 0.4); --accent-blue: #3b82f6; --success: #10b981; --success-glow: rgba(16, 185, 129, 0.4); --font-body: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace; --radius: 6px; --shadow: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4); --input-bg: #0b1120; --input-border: #1f2937; --btn-hover: #374151; }
+:root { --bg-color: #0b1120; --panel-bg: #111827; --panel-border: #1f2937; --text-main: #f3f4f6; --text-muted: #9ca3af; --accent-red: #ef4444; --accent-red-glow: rgba(239, 68, 68, 0.4); --accent-amber: #f59e0b; --accent-amber-glow: rgba(245, 158, 11, 0.4); --accent-blue: #3b82f6; --accent-purple: #8b5cf6; --success: #10b981; --success-glow: rgba(16, 185, 129, 0.4); --font-body: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace; --radius: 6px; --shadow: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4); --input-bg: #0b1120; --input-border: #1f2937; --btn-hover: #374151; }
 [data-theme='light'] { --bg-color: #f0f4f8; --panel-bg: #ffffff; --panel-border: #e2e8f0; --text-main: #1e293b; --text-muted: #64748b; --accent-red: #dc2626; --accent-red-glow: rgba(220, 38, 38, 0.25); --accent-amber: #d97706; --accent-amber-glow: rgba(217, 119, 6, 0.25); --accent-blue: #2563eb; --success: #059669; --success-glow: rgba(5, 150, 105, 0.25); --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.05); --input-bg: #f8fafc; --input-border: #cbd5e1; --btn-hover: #e2e8f0; }
 [data-theme='light'] .sidebar { background: #1e293b; border-right-color: #334155; }
 [data-theme='light'] .sidebar h2 { color: #60a5fa; }
@@ -630,15 +630,15 @@ th {
   letter-spacing: 0.04em;
   cursor: pointer;
   border: none;
-  background: var(--accent);
+  background: var(--accent-red);
   color: white;
   transition: all 0.2s;
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
 }
 .portal-submit-btn:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 6px 24px rgba(239, 68, 68, 0.5);
 }
 .portal-submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
@@ -978,4 +978,18 @@ th {
   color: var(--text-muted);
   font-size: 0.85rem;
   line-height: 1.5;
+}
+
+/* ─── Missing keyframe animations ─── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
 }

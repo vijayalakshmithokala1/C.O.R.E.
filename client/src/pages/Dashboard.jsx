@@ -166,13 +166,13 @@ export default function Dashboard() {
             <Activity size={18} /> Incidents
           </Link>
           
-          {(user.role === 'Receptionist' || user.role === 'Administrator' || user.role === 'Front Desk' || user.role === 'Hotel Manager') ? (
+          {(user.role === 'Receptionist' || user.role === 'Administrator' || user.role === 'Front Desk' || user.role === 'Hotel Manager' || user.role === 'Help Desk' || user.role === 'Duty Manager' || user.role === 'Information' || user.role === 'Admin') ? (
             <Link to="/dashboard/patients" className={`nav-link ${location.pathname === '/dashboard/patients' ? 'active' : ''}`}>
               <Users size={18} /> {terms.patients}
             </Link>
           ) : null}
 
-          {(user.role === 'Administrator' || user.role === 'Hotel Manager') && (
+          {(user.role === 'Administrator' || user.role === 'Hotel Manager' || user.role === 'Duty Manager' || user.role === 'Admin') && (
             <>
               <Link to="/dashboard/staff" className={`nav-link ${location.pathname === '/dashboard/staff' ? 'active' : ''}`}>
                 <UserPlus size={18} /> Manage Staff
@@ -234,7 +234,7 @@ export default function Dashboard() {
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
 
-          {(user.role === 'Security' || user.role === 'Administrator' || user.role === 'Hotel Manager') && (
+          {(user.role === 'Security' || user.role === 'Administrator' || user.role === 'Hotel Manager' || user.role === 'Duty Manager' || user.role === 'Admin') && (
             <button style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', backgroundColor: '#3b82f6', color: 'white' }} onClick={triggerCameraAlert} disabled={simulatingCamera}>
               <Camera size={18} /> Simulate AI Camera
             </button>

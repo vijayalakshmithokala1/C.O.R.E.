@@ -1,10 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+
 const { authenticateToken, requireRole } = require('./auth');
 const crypto = require('crypto');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // Get config for Web Portal for geofence validation
 router.get('/config', async (req, res) => {
@@ -36,9 +36,10 @@ router.get('/sessions', authenticateToken, async (req, res) => {
 });
 
 // Receptionist / Front Desk Check-in
-router.post('/checkin', authenticateToken, requireRole(['Receptionist', 'Administrator', 'Front Desk', 'Hotel Manager']), async (req, res) => {
+router.post('/checkin', authenticateToken, requireRole(['Receptionist', 'Administrator', 'Front Desk', 'Hotel Manager', 'Help Desk', 'Duty Manager', 'Information', 'Admin']), async (req, res) => {
   const { name } = req.body;
-  const prefix = req.user.domain === 'HOTEL' ? 'GST-' : 'PAT-';
+  const prefixMap = { HOTEL: 'GST-', AIRPORT: 'PSG-', MALL: 'SHR-', HOSPITAL: 'PAT-' };
+  const prefix = prefixMap[req.user.domain] || 'SES-';
   const sessionCode = `${prefix}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   
   const session = await prisma.session.create({
@@ -62,7 +63,7 @@ router.post('/checkin', authenticateToken, requireRole(['Receptionist', 'Adminis
 });
 
 // Receptionist / Front Desk Discharge
-router.post('/discharge/:id', authenticateToken, requireRole(['Receptionist', 'Administrator', 'Front Desk', 'Hotel Manager']), async (req, res) => {
+router.post('/discharge/:id', authenticateToken, requireRole(['Receptionist', 'Administrator', 'Front Desk', 'Hotel Manager', 'Help Desk', 'Duty Manager', 'Information', 'Admin']), async (req, res) => {
   const session = await prisma.session.update({
     where: { id: req.params.id },
     data: {

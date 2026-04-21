@@ -133,7 +133,7 @@ export default function ReceptionDashboard({ socket, user }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>{terms.patient} Registration</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Manage ${terms.patient.toLowerCase()} check-ins and generate QR access codes</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{`Manage ${terms.patient.toLowerCase()} check-ins and generate QR access codes`}</p>
         </div>
         <button
           onClick={handleCheckIn}

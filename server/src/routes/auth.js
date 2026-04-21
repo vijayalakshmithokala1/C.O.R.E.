@@ -1,11 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+
 
 const router = express.Router();
-const prisma = new PrismaClient();
-
+const prisma = require('../utils/prisma');
 // Initial Admin creation if none exists (for easy setup)
 router.post('/setup-admin', async (req, res) => {
   try {
@@ -15,7 +14,7 @@ router.post('/setup-admin', async (req, res) => {
     let roleName = 'Administrator'; // Default
     if (reqDomain === 'HOTEL') roleName = 'Hotel Manager';
     if (reqDomain === 'AIRPORT') roleName = 'Duty Manager';
-    if (reqDomain === 'MALL') roleName = 'Mall Admin';
+    if (reqDomain === 'MALL') roleName = 'Admin'; // Must match Login.jsx option value="Admin"
 
     const adminExists = await prisma.user.findFirst({ where: { role: roleName, domain: reqDomain } });
     if (adminExists) {
@@ -42,7 +41,8 @@ router.post('/setup-admin', async (req, res) => {
 
     res.json({ message: 'Admin setup successful', user: { id: user.id, username: user.username, role: user.role } });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('[setup-admin error]', error);
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 
@@ -69,7 +69,8 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role, floors: user.floors, domain: user.domain } });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('[login error]', error);
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 

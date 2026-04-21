@@ -55,7 +55,8 @@ export default function AdminDashboard({ section, user }) {
       }
     };
     
-    if (user?.role === 'Administrator' || user?.role === 'Hotel Manager') {
+    const isAdmin = user?.role === 'Administrator' || user?.role === 'Hotel Manager' || user?.role === 'Duty Manager' || user?.role === 'Admin';
+    if (isAdmin) {
       fetchData();
     }
   }, [section, user]);
@@ -142,7 +143,8 @@ export default function AdminDashboard({ section, user }) {
     }
   };
 
-  if (user?.role !== 'Administrator' && user?.role !== 'Hotel Manager') return <div>Unauthorized</div>;
+  const isAdmin = user?.role === 'Administrator' || user?.role === 'Hotel Manager' || user?.role === 'Duty Manager' || user?.role === 'Admin';
+  if (!isAdmin) return <div>Unauthorized</div>;
   if (loading) return <div>Loading...</div>;
 
   return (
