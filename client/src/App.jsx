@@ -18,6 +18,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<Login />} />
         
         {/* Staff Dashboard */}
@@ -29,6 +30,9 @@ function App() {
 
         {/* Public Patient Portal QR Access */}
         <Route path="/portal/:sessionId" element={<PatientPortal />} />
+        
+        {/* Catch all - redirect home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
