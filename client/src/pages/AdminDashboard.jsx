@@ -158,23 +158,40 @@ export default function AdminDashboard({ section, user }) {
               <input type="text" placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} required />
               <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} required />
               <select value={role} onChange={e=>setRole(e.target.value)}>
-                {isHotel ? (
+                {currentDomain === 'HOTEL' && (
                   <>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Security">Security</option>
-                    <option value="Front Desk">Front Desk</option>
                     <option value="Hotel Manager">Hotel Manager</option>
+                    <option value="Security">Security</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Front Desk">Front Desk</option>
                   </>
-                ) : (
+                )}
+                {currentDomain === 'AIRPORT' && (
                   <>
+                    <option value="Duty Manager">Duty Manager</option>
+                    <option value="Security">Security</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Help Desk">Help Desk</option>
+                  </>
+                )}
+                {currentDomain === 'MALL' && (
+                  <>
+                    <option value="Admin">Mall Admin</option>
+                    <option value="Security">Security</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Information">Information Desk</option>
+                  </>
+                )}
+                {currentDomain === 'HOSPITAL' && (
+                  <>
+                    <option value="Administrator">Administrator</option>
                     <option value="Doctor">Doctor</option>
                     <option value="Nurse">Nurse</option>
                     <option value="Receptionist">Receptionist</option>
-                    <option value="Administrator">Administrator</option>
                   </>
                 )}
               </select>
-              {(role === 'Doctor' || role === 'Nurse' || role === 'Receptionist' || role === 'Maintenance' || role === 'Security') && (
+              {(['Doctor', 'Nurse', 'Receptionist', 'Maintenance', 'Security', 'Operations', 'Help Desk', 'Information'].includes(role)) && (
                 <input type="text" placeholder="Assigned Floors (comma separated, e.g. Floor 1, Floor 2)" value={floors} onChange={e=>setFloors(e.target.value)} style={{ gridColumn: '1 / -1' }} />
               )}
               <button type="submit" className="primary" style={{ gridColumn: '1 / -1' }}>Create Staff Account</button>
@@ -212,11 +229,11 @@ export default function AdminDashboard({ section, user }) {
 
       {section === 'settings' && (
         <>
-          <h1 style={{ marginBottom: '2rem' }}>{terms.hospital} System Configuration</h1>
+          <h1 style={{ marginBottom: '2rem' }}>{terms.label} System Configuration</h1>
           <div className="panel">
             <h3>Geofence Constraints</h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-              Setting this ensures that {terms.patient.toLowerCase()} portals can only submit incident reports when physically located within this radius around the {terms.hospital.toLowerCase()} center.
+              Setting this ensures that {terms.patient.toLowerCase()} portals can only submit incident reports when physically located within this radius around the {terms.label.toLowerCase()} center.
             </p>
             <form onSubmit={handleUpdateConfig} style={{ maxWidth: '400px' }}>
               <label>Center Latitude</label>

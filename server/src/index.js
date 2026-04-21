@@ -57,6 +57,20 @@ io.on('connection', (socket) => {
     io.to(`staff_all_${domain}`).emit('emergency_buzz', data);
   });
 
+  // 📹 Video Triage Signaling Relay
+  socket.on('incident_video_start', (data) => {
+     // Broadcast to the staff of the domain that a video stream has started
+     const domain = data.domain || 'HOSPITAL';
+     console.log(`[Socket] Video triage started for incident ${data.incidentId} in domain ${domain}`);
+     io.to(`staff_all_${domain}`).emit('incident_video_start', data);
+  });
+
+  socket.on('incident_video_stop', (data) => {
+     const domain = data.domain || 'HOSPITAL';
+     console.log(`[Socket] Video triage stopped for incident ${data.incidentId}`);
+     io.to(`staff_all_${domain}`).emit('incident_video_stop', data);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });

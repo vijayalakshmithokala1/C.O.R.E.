@@ -59,6 +59,15 @@ export default function MedicalDashboard({ socket, user }) {
   useEffect(() => {
     if (!socket) return;
 
+    const handleJoin = () => {
+      socket.emit('join_room', `staff_all_${domain}`);
+      console.log(`[Dashboard] Joining command room: staff_all_${domain}`);
+    };
+
+    handleJoin();
+    // Re-join on reconnection
+    socket.on('connect', handleJoin);
+
     const handleNew = (incident) => {
       setIncidents((prev) => {
         // Avoid duplicates
@@ -99,7 +108,8 @@ export default function MedicalDashboard({ socket, user }) {
       socket.off('incident_updated', handleUpdate);
       socket.off('incident_video_start');
       socket.off('incident_video_stop');
-      socket.off('connect');
+      socket.off('connect', handleJoin);
+    };
     };
   }, [socket, fetchIncidents]);
 
@@ -203,7 +213,7 @@ export default function MedicalDashboard({ socket, user }) {
               padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem'
             }}
           >
-            <ShieldAlert size={14} /> {hicsMode ? 'HICS MODE ACTIVE' : 'ACTIVATE HICS'}
+            <ShieldAlert size={14} /> {hicsMode ? (domain === 'HOSPITAL' ? 'HICS MODE ACTIVE' : 'NIMS STRATEGIC ACTIVE') : (domain === 'HOSPITAL' ? 'ACTIVATE HICS' : 'ACTIVATE COMMAND')}
           </button>
         </div>
         

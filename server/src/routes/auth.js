@@ -11,7 +11,11 @@ router.post('/setup-admin', async (req, res) => {
   try {
     const { username, password, name, domain } = req.body;
     const reqDomain = domain || 'HOSPITAL';
-    const roleName = reqDomain === 'HOTEL' ? 'Hotel Manager' : 'Administrator';
+    
+    let roleName = 'Administrator'; // Default
+    if (reqDomain === 'HOTEL') roleName = 'Hotel Manager';
+    if (reqDomain === 'AIRPORT') roleName = 'Duty Manager';
+    if (reqDomain === 'MALL') roleName = 'Mall Admin';
 
     const adminExists = await prisma.user.findFirst({ where: { role: roleName, domain: reqDomain } });
     if (adminExists) {

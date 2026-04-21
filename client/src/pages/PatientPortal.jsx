@@ -112,7 +112,7 @@ export default function PatientPortal() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       if (videoRef.current) videoRef.current.srcObject = stream;
       setStreaming(true);
-      socketRef.current.emit('incident_video_start', { incidentId: activeIncident.id, sessionId });
+      socketRef.current.emit('incident_video_start', { incidentId: activeIncident.id, sessionId, domain: contextDomain });
     } catch (err) {
       alert("Camera access required for Video Triage simulation.");
     }
@@ -124,7 +124,7 @@ export default function PatientPortal() {
       videoRef.current.srcObject = null;
     }
     setStreaming(false);
-    socketRef.current.emit('incident_video_stop', { incidentId: activeIncident.id });
+    socketRef.current.emit('incident_video_stop', { incidentId: activeIncident.id, domain: contextDomain });
   };
 
   // ─── Socket connection ──────────────────────────────────────────
@@ -451,7 +451,7 @@ export default function PatientPortal() {
             </button>
 
             <p className="portal-disclaimer">
-              This report will be sent immediately to the relevant {terms.hospital.toLowerCase()} staff on duty.
+              This report will be sent immediately to the relevant {terms.label} staff on duty.
             </p>
           </form>
         )}
