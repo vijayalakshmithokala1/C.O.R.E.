@@ -223,7 +223,7 @@ export default function DocUploader({
           <div className="result-grid">
             
             {/* MAIN AREA */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
               
               {/* Summary Card */}
               <div className="glass-card" style={{ padding: '1.75rem' }}>
@@ -282,7 +282,11 @@ export default function DocUploader({
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
                             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Aggregated Score</span>
                             <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                                {result.risk_score.toString().includes('/10') ? result.risk_score : `${result.risk_score}/10`}
+                                {(() => {
+                                  let s = result.risk_score.toString();
+                                  if (s.includes('/10')) return s;
+                                  return s + '/10';
+                                })()}
                             </span>
                           </div>
                         )}

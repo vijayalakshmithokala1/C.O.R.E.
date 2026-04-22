@@ -36,10 +36,12 @@
   --radius-lg:      16px;
   --radius-xl:      24px;
 
-  --shadow-card:    0 4px 24px rgba(0,0,0,0.4);
   --shadow-glow:    0 0 40px rgba(201, 168, 76, 0.08);
   --orb-gradient-1: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%);
   --orb-gradient-2: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+
+  --sidebar-bg:     rgba(14, 18, 30, 0.6);
+  --sidebar-border: var(--border);
 }
 
 [data-theme='light'] {
@@ -48,6 +50,9 @@
   --bg-card:        #FFFFFF;
   --bg-card-hover:  #F1F5F9;
   --bg-input:       #F1F5F9;
+
+  --sidebar-bg:     #FFFFFF;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
 
   --gold:           #856404;
   --gold-light:     #9A730B;
@@ -69,6 +74,18 @@
   --shadow-glow:    0 0 40px rgba(180, 138, 45, 0.05);
   --orb-gradient-1: radial-gradient(circle, rgba(180,138,45,0.08) 0%, transparent 70%);
   --orb-gradient-2: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+}
+
+[data-theme='light'] .logo-text {
+  background: linear-gradient(135deg, #B48A2D, #856404);
+}
+
+[data-theme='light'] .sidebar-link {
+  color: var(--text-secondary);
+}
+
+[data-theme='light'] .sidebar-link:hover, [data-theme='light'] .sidebar-link.active {
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* ── Base Reset ───────────────────────────────── */
@@ -370,7 +387,7 @@ body {
 
 /* ── Navbar ──────────────────────────────────── */
 .navbar {
-  background: rgba(13, 17, 23, 0.85);
+  background: var(--bg-surface);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -414,8 +431,8 @@ code {
 
 .sidebar {
   width: 260px;
-  background: rgba(14, 18, 30, 0.6);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
