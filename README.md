@@ -3,10 +3,11 @@
 SmartLaw is a secure legal document management and analysis platform that detects risks and generates actionable insights. Designed from the ground up prioritizing privacy, it ensures sensitive personal data is not exposed to third-party AI models.
 
 ## ❗ Problem Statement
-Legal professionals handle highly sensitive documents daily (NDAs, contracts, financial records). However, utilizing standard consumer AI tools to process these documents creates massive compliance risks by exposing Personally Identifiable Information (PII) to external, third-party LLM providers.
+Legal professionals handle highly sensitive documents containing personal identifiers (PAN, Aadhaar, etc.).
+Existing AI tools can expose this data to external models, creating serious privacy risks.
 
 ## 💡 Solution
-SmartLaw introduces a privacy-first pipeline. By integrating a custom PII redaction layer with client-side mapping restoration, it gives professionals the power of advanced AI reasoning (Llama 3.3) *without* compromising client confidentiality.
+SmartLaw is a privacy-first legal AI platform that analyzes documents, detects risks, and generates actionable insights—without exposing sensitive personal data to AI models.
 
 ## 🌐 Live Deployment
 
