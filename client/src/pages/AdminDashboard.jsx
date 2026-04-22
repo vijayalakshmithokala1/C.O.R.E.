@@ -458,27 +458,26 @@ export default function AdminDashboard({ section, user }) {
                   </div>
                   
                   {/* Mock Video Feed */}
-                  <div style={{ height: '140px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'red', animation: 'blink 1s infinite' }} />
+                  <div style={{ height: '180px', background: '#000', backgroundImage: `url(${feed.status === 'Alert' ? (feed.lastEvent === 'Fire' ? '/cctv_fire.png' : '/cctv_threat.png') : '/cctv_normal.png'})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'red', animation: 'blink 1s infinite', marginTop: '2px' }} />
                       <span style={{ fontSize: '0.6rem', color: 'white', fontWeight: 'bold' }}>REC</span>
                     </div>
                     {feed.status === 'Alert' ? (
-                      <div style={{ textAlign: 'center' }}>
+                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.7)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-red)' }}>
                          <div style={{ color: 'var(--accent-red)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.5rem', animation: 'pulse 1s infinite' }}>
                            {feed.lastEvent === 'Fire' ? '🔥 FIRE DETECTED' : '🚨 THREAT DETECTED'}
                          </div>
                          <div style={{ color: 'var(--accent-amber)', fontSize: '0.7rem' }}>Incident auto-created → Staff notified</div>
-                         <div style={{ border: '2px solid var(--accent-red)', width: '60px', height: '60px', margin: '0.5rem auto 0', animation: 'pulse 1s infinite' }} />
                       </div>
                     ) : (
-                      <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.7rem', textAlign: 'center' }}>
-                        <div>[ MONITORING ]</div>
+                      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textAlign: 'center', background: 'rgba(0,0,0,0.4)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
+                        <div style={{ letterSpacing: '2px' }}>[ MONITORING ]</div>
                         <div style={{ fontSize: '0.6rem', marginTop: '0.3rem' }}>No anomalies detected</div>
                       </div>
                     )}
                     {/* Scanline overlay */}
-                    <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(rgba(0,0,0,0) 0, rgba(0,0,0,0.1) 1px, transparent 2px)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(rgba(0,0,0,0) 0, rgba(0,0,0,0.15) 1px, transparent 2px)', pointerEvents: 'none' }} />
                   </div>
 
                   {/* Action Buttons */}
