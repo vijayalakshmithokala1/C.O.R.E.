@@ -20,6 +20,7 @@ import {
 import { playEmergencyBuzzAlarm, stopEmergencyBuzzAlarm, unlockAudio } from '../utils/alarm';
 import API_BASE from '../utils/api';
 import { useDomain } from '../context/DomainContext';
+import { getTranslator } from '../utils/translations';
 
 // Haversine formula — distance between two GPS points in metres
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -33,11 +34,6 @@ function getDistance(lat1, lon1, lat2, lon2) {
     Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-
-const INCIDENT_TYPES = [
-  { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Requires immediate medical attention' },
-  { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
-];
 
 export default function PatientPortal() {
   const { sessionId } = useParams();
@@ -70,6 +66,9 @@ export default function PatientPortal() {
   const [streaming, setStreaming] = useState(false);
   const videoRef = useRef(null);
 
+  // Translation helper
+  const t = getTranslator(language);
+
   const LANGUAGES = [
     { code: 'en', label: 'English', flag: '🇺🇸' },
     { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
@@ -78,25 +77,25 @@ export default function PatientPortal() {
   ];
 
   const INCIDENT_TYPES_DYNAMIC = (session?.domain === 'HOTEL' || contextDomain === 'HOTEL') ? [
-    { value: 'Maintenance Issue', emoji: '🔧', label: 'Maintenance', color: '#f59e0b', desc: 'Plumbing, electrical, or structural issue' },
-    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
-    { value: 'Security Breach', emoji: '🚨', label: 'Security', color: '#dc2626', desc: 'Security incident or intruder' },
-    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#3b82f6', desc: 'Medical incident requiring staff' },
-    { value: 'Other', emoji: '⚡', label: 'Other', color: '#8b5cf6', desc: 'Other assistance needed' },
+    { value: 'Maintenance Issue', emoji: '🔧', label: t('maintenance'), color: '#f59e0b', desc: t('reqMaintenance') },
+    { value: 'Fire', emoji: '🔥', label: t('fireSmoke'), color: '#ef4444', desc: t('reqFire') },
+    { value: 'Security Breach', emoji: '🚨', label: t('security'), color: '#dc2626', desc: t('reqSecurity') },
+    { value: 'Medical Emergency', emoji: '🏥', label: t('medicalEmergency'), color: '#3b82f6', desc: t('medicalStaff') },
+    { value: 'Other', emoji: '⚡', label: t('other'), color: '#8b5cf6', desc: t('reqOther') },
   ] : (session?.domain === 'AIRPORT' ? [
-    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Passenger medical distress' },
-    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Smoke or fire in terminal' },
-    { value: 'Security Breach', emoji: '🚨', label: 'Security Threat', color: '#dc2626', desc: 'Unattended baggage or intruder' },
-    { value: 'Other', emoji: '⚡', label: 'Operations Alert', color: '#3b82f6', desc: 'Other terminal emergency' },
+    { value: 'Medical Emergency', emoji: '🏥', label: t('medicalEmergency'), color: '#f59e0b', desc: t('passengerMedical') },
+    { value: 'Fire', emoji: '🔥', label: t('fireSmoke'), color: '#ef4444', desc: t('terminalSmoke') },
+    { value: 'Security Breach', emoji: '🚨', label: t('securityThreat'), color: '#dc2626', desc: t('unattendedBag') },
+    { value: 'Other', emoji: '⚡', label: t('operationsAlert'), color: '#3b82f6', desc: t('otherTerminal') },
   ] : (session?.domain === 'MALL' ? [
-    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Shopper medical incident' },
-    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Smoke in shop or food court' },
-    { value: 'Security Breach', emoji: '🚨', label: 'Security Alert', color: '#dc2626', desc: 'Theft or security threat' },
-    { value: 'Maintenance Issue', emoji: '🔧', label: 'Maintenance', color: '#3b82f6', desc: 'Leak or power failure' },
+    { value: 'Medical Emergency', emoji: '🏥', label: t('medicalEmergency'), color: '#f59e0b', desc: t('shopperMedical') },
+    { value: 'Fire', emoji: '🔥', label: t('fireSmoke'), color: '#ef4444', desc: t('mallFire') },
+    { value: 'Security Breach', emoji: '🚨', label: t('securityAlert'), color: '#dc2626', desc: t('mallSecurity') },
+    { value: 'Maintenance Issue', emoji: '🔧', label: t('maintenance'), color: '#3b82f6', desc: t('mallMaintenance') },
   ] : [
-    { value: 'Medical Emergency', emoji: '🏥', label: 'Medical Emergency', color: '#f59e0b', desc: 'Requires immediate medical attention' },
-    { value: 'Fire', emoji: '🔥', label: 'Fire / Smoke', color: '#ef4444', desc: 'Fire, smoke, or evacuation needed' },
-    { value: 'Other', emoji: '⚡', label: 'Other Emergency', color: '#3b82f6', desc: 'Security, structural, or other threat' },
+    { value: 'Medical Emergency', emoji: '🏥', label: t('medicalEmergency'), color: '#f59e0b', desc: t('reqMedical') },
+    { value: 'Fire', emoji: '🔥', label: t('fireSmoke'), color: '#ef4444', desc: t('reqFire') },
+    { value: 'Other', emoji: '⚡', label: t('otherEmergency'), color: '#3b82f6', desc: t('reqOther') },
   ]));
 
   // Emergency alert from staff buzz
@@ -211,7 +210,7 @@ export default function PatientPortal() {
     }
     if (!navigator.geolocation) {
       setGeoStatus('denied');
-      setGeoMessage('Geolocation is not supported by your browser.');
+      setGeoMessage(t('geoNotSupported'));
       return;
     }
     const check = () => {
@@ -228,7 +227,7 @@ export default function PatientPortal() {
         },
         () => {
           setGeoStatus('denied');
-          setGeoMessage('Please allow location access to use this portal.');
+          setGeoMessage(t('allowLocation'));
         },
         { maximumAge: 30000, timeout: 10000 }
       );
@@ -244,7 +243,7 @@ export default function PatientPortal() {
     setFormError('');
     const canSubmit = geoStatus === 'ok' || geoStatus === 'bypass';
     if (!canSubmit) return;
-    if (!description.trim()) { setFormError('Please provide a description.'); return; }
+    if (!description.trim()) { setFormError(t('provideDescription')); return; }
     setSubmitting(true);
     const fd = new FormData();
     fd.append('type', type);
@@ -260,10 +259,10 @@ export default function PatientPortal() {
         setStep('success');
       } else {
         const err = await res.json();
-        setFormError(err.error || 'Failed to submit. Please try again.');
+        setFormError(err.error || t('failedSubmit'));
       }
     } catch {
-      setFormError('Network error. Please check your connection.');
+      setFormError(t('networkError'));
     } finally {
       setSubmitting(false);
     }
@@ -283,8 +282,8 @@ export default function PatientPortal() {
     }
   };
 
-  if (session === undefined) return <div className="portal-shell"><div className="portal-loading"><div className="portal-spinner" /><p>Verifying session...</p></div></div>;
-  if (session === null) return <div className="portal-shell"><div className="portal-invalid"><div className="portal-invalid-icon"><AlertTriangle size={40} /></div><h2>Session Ended</h2><p>This QR code is no longer active. You have been discharged or the session expired.</p><p className="portal-invalid-sub">Thank you for visiting. We wish you safety.</p></div></div>;
+  if (session === undefined) return <div className="portal-shell"><div className="portal-loading"><div className="portal-spinner" /><p>{t('verifying')}</p></div></div>;
+  if (session === null) return <div className="portal-shell"><div className="portal-invalid"><div className="portal-invalid-icon"><AlertTriangle size={40} /></div><h2>{t('sessionEnded')}</h2><p>{t('sessionExpired')}</p><p className="portal-invalid-sub">{t('thankYou')}</p></div></div>;
 
   const isResolved = activeIncident?.status === 'Resolved';
 
@@ -294,16 +293,16 @@ export default function PatientPortal() {
         <div className="portal-buzz-overlay">
           <div className="portal-buzz-card">
             <div className="portal-buzz-icon"><AlertCircle size={56} /></div>
-            <h1>Emergency Alert</h1>
+            <h1>{t('emergencyAlert')}</h1>
             <p>{emergencyAlert}</p>
-            <div className="portal-buzz-instruction">Follow all staff instructions immediately.<br />Proceed to your nearest exit or muster point.</div>
-            <button className="portal-buzz-dismiss" onClick={() => { setEmergencyAlert(null); stopEmergencyBuzzAlarm(); }}>✓ Acknowledge</button>
+            <div className="portal-buzz-instruction">{t('followInstructions')}<br />{t('proceedExit')}</div>
+            <button className="portal-buzz-dismiss" onClick={() => { setEmergencyAlert(null); stopEmergencyBuzzAlarm(); }}>{t('acknowledge')}</button>
           </div>
         </div>
       )}
 
       <header className="portal-header-bar">
-        <div className="portal-logo"><span className="portal-logo-core">C.O.R.E.</span><span className="portal-logo-sub">{terms.patient} Portal</span></div>
+        <div className="portal-logo"><span className="portal-logo-core">C.O.R.E.</span><span className="portal-logo-sub">{t('portalTitle')}</span></div>
         <div className="portal-patient-badge">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '0.5rem' }}>
             <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '0.2rem', fontSize: '0.75rem', background: 'transparent', border: 'none', color: 'var(--text-main)' }}>
@@ -319,14 +318,14 @@ export default function PatientPortal() {
         {step === 'success' && activeIncident && (
           <div className="portal-success-card">
             <div className="portal-success-icon"><CheckCircle size={48} color={isResolved ? 'var(--success)' : 'var(--accent-amber)'} /></div>
-            <h2>{isResolved ? 'Situation Resolved' : 'SOS Transmitted'}</h2>
+            <h2>{isResolved ? t('situationResolved') : t('sosTransmitted')}</h2>
             
-            {activeIncident.status === 'Pending' && <p style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>Alert broadcasted to all {terms.label} staff. Help is coming.</p>}
+            {activeIncident.status === 'Pending' && <p style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>{t('alertBroadcasted')} {terms.label} {t('helpComing')}</p>}
             
             {(activeIncident.status === 'Reviewed' || activeIncident.status === 'In Progress') && (
                <div style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--accent-blue)' }}>Responder en route!</p>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>Assigned: <strong style={{ color: 'var(--text-main)' }}>{activeIncident.assignedToName || 'Response Team'}</strong></p>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--accent-blue)' }}>{t('responderEnRoute')}</p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>{t('assigned')}: <strong style={{ color: 'var(--text-main)' }}>{activeIncident.assignedToName || t('responseTeam')}</strong></p>
                </div>
             )}
 
@@ -334,19 +333,19 @@ export default function PatientPortal() {
             {!isResolved && activeIncident.status !== 'Pending' && (
               <div style={{ margin: '1.5rem 0', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  <Video size={18} /> High-Fidelity Video Triage
+                  📹 {t('videoTriage')}
                 </div>
                 {streaming ? (
                   <div style={{ position: 'relative' }}>
                     <video ref={videoRef} autoPlay playsInline muted className="live-camera-feed" style={{ width: '100%', borderRadius: '8px', background: '#000', minHeight: '200px' }} />
-                    <div className="stream-badge">LIVE FEED ACTIVE</div>
-                    <button onClick={stopVideoStream} className="danger" style={{ width: '100%', marginTop: '0.75rem' }}>Disconnect Video</button>
+                    <div className="stream-badge">{t('liveFeed')}</div>
+                    <button onClick={stopVideoStream} className="danger" style={{ width: '100%', marginTop: '0.75rem' }}>{t('disconnectVideo')}</button>
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Enable video for remote visual assessment by {terms.label} staff.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{t('enableVideo')} {terms.label} staff.</p>
                     <button onClick={startVideoStream} className="primary" style={{ width: '100%', background: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                      <Video size={18} /> Start Video Stream
+                      📹 {t('startVideo')}
                     </button>
                   </div>
                 )}
@@ -355,73 +354,73 @@ export default function PatientPortal() {
 
             {isResolved && (
                <div className="portal-feedback-section">
-                  <p>Incident resolved. Thank you for your patience.</p>
+                  <p>{t('resolved')}</p>
                   {!feedbackSubmitted ? (
                     <div style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: '8px', marginTop: '1rem', border: '1px solid var(--panel-border)' }}>
-                       <p style={{ fontWeight: 'bold' }}>Rate our response speed & quality:</p>
+                       <p style={{ fontWeight: 'bold' }}>{t('rateResponse')}</p>
                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', margin: '0.5rem 0' }}>
                           {[1,2,3,4,5].map(num => <button key={num} type="button" onClick={() => setFeedbackRating(num)} style={{ padding: '0.5rem', background: feedbackRating >= num ? 'var(--accent-amber)' : 'var(--bg-color)', border: '1px solid var(--panel-border)', borderRadius: '4px' }}>⭐</button>)}
                        </div>
-                       <textarea placeholder="Comments..." value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} style={{ width: '100%', fontSize: '0.85rem', marginBottom: '0.5rem' }} />
-                       <button onClick={handleFeedback} className="primary" style={{ width: '100%', padding: '0.5rem' }}>Submit Feedback</button>
+                       <textarea placeholder={t('comments')} value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} style={{ width: '100%', fontSize: '0.85rem', marginBottom: '0.5rem' }} />
+                       <button onClick={handleFeedback} className="primary" style={{ width: '100%', padding: '0.5rem' }}>{t('submitFeedback')}</button>
                     </div>
-                  ) : <p style={{ color: 'var(--success)', fontWeight: 'bold' }}>Feedback Sent. Thank you!</p>}
+                  ) : <p style={{ color: 'var(--success)', fontWeight: 'bold' }}>{t('feedbackSent')}</p>}
                </div>
             )}
 
             {activeIncident.aiTriageInstructions && (
                <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-blue)', padding: '1rem', borderRadius: '8px', margin: '1rem 0', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', marginBottom: '0.5rem', fontWeight: 'bold' }}><AlertCircle size={18} /> AI First-Aid Instructions</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', marginBottom: '0.5rem', fontWeight: 'bold' }}><AlertCircle size={18} /> {t('aiInstructions')}</div>
                   <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5 }}>{activeIncident.aiTriageInstructions}</p>
                </div>
             )}
 
-            <button className="portal-btn-outline" style={{ marginTop: '1rem' }} onClick={() => { setStep('form'); setDescription(''); setFile(null); setActiveIncident(null); setTimeSinceCreation(0); if (streaming) stopVideoStream(); }}>Report Another Emergency</button>
+            <button className="portal-btn-outline" style={{ marginTop: '1rem' }} onClick={() => { setStep('form'); setDescription(''); setFile(null); setActiveIncident(null); setTimeSinceCreation(0); if (streaming) stopVideoStream(); }}>{t('reportAnother')}</button>
           </div>
         )}
 
         {step === 'form' && (geoStatus === 'outside' || geoStatus === 'denied') && (
           <div className="portal-geo-block">
             <div className="portal-geo-icon">{geoStatus === 'denied' ? <WifiOff size={40} /> : <MapPin size={40} />}</div>
-            <h3>{geoStatus === 'denied' ? 'Location Access Required' : `Outside Area Perimeter`}</h3>
+            <h3>{geoStatus === 'denied' ? t('locationRequired') : t('outsidePerimeter')}</h3>
             <p>{geoMessage}</p>
           </div>
         )}
 
-        {step === 'form' && geoStatus === 'checking' && <div className="portal-geo-checking"><Loader size={28} className="spin-icon" /><p>Verifying location...</p></div>}
+        {step === 'form' && geoStatus === 'checking' && <div className="portal-geo-checking"><Loader size={28} className="spin-icon" /><p>{t('verifyingLocation')}</p></div>}
 
         {step === 'form' && (geoStatus === 'ok' || geoStatus === 'bypass') && (
           <form className="portal-form" onSubmit={handleSubmit}>
-            <div className="portal-section-label"><FileText size={14} /> Emergency Category</div>
+            <div className="portal-section-label"><FileText size={14} /> {t('emergencyCategory')}</div>
             <div className="portal-type-grid">
-              {INCIDENT_TYPES_DYNAMIC.map((t) => (
-                <button key={t.value} type="button" className={`portal-type-pill ${type === t.value ? 'active' : ''}`} style={{ '--pill-color': t.color }} onClick={() => setType(t.value)}>
-                  <span className="pill-emoji">{t.emoji}</span><span className="pill-label">{t.label}</span><span className="pill-desc">{t.desc}</span>
+              {INCIDENT_TYPES_DYNAMIC.map((tp) => (
+                <button key={tp.value} type="button" className={`portal-type-pill ${type === tp.value ? 'active' : ''}`} style={{ '--pill-color': tp.color }} onClick={() => setType(tp.value)}>
+                  <span className="pill-emoji">{tp.emoji}</span><span className="pill-label">{tp.label}</span><span className="pill-desc">{tp.desc}</span>
                 </button>
               ))}
             </div>
-            <div className="portal-section-label"><MapPin size={14} /> Location Details</div>
+            <div className="portal-section-label"><MapPin size={14} /> {t('locationDetails')}</div>
             <div className="portal-select-wrap">
               <select className="portal-select" value={locationDetails} onChange={(e) => setLocationDetails(e.target.value)} required>
-                <option value="">Select Floor / Area...</option>
+                <option value="">{t('selectFloor')}</option>
                 {DOMAINS[session.domain || contextDomain]?.floors?.map(f => (
                   <option key={f} value={f}>{f}</option>
                 ))}
-                <option value="Other / Outside">Other / Outside</option>
+                <option value="Other / Outside">{t('otherOutside')}</option>
               </select>
               <ChevronDown className="portal-select-icon" size={18} />
             </div>
 
-            <div className="portal-section-label"><AlertCircle size={14} /> Situation Briefing</div>
+            <div className="portal-section-label"><AlertCircle size={14} /> {t('situationBriefing')}</div>
             <textarea 
               className="portal-textarea" 
-              placeholder={`Describe the emergency...`} 
+              placeholder={t('describePlaceholder')} 
               rows={4} value={description} 
               onChange={(e) => setDescription(e.target.value)} 
               required 
             />
 
-            <div className="portal-section-label"><Camera size={14} /> Evidence / Photo (Optional)</div>
+            <div className="portal-section-label"><Camera size={14} /> {t('evidencePhoto')}</div>
             <label className="portal-file-label">
               <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files[0])} style={{ display: 'none' }} accept="image/*,video/*,audio/*" />
               {file ? (
@@ -432,7 +431,7 @@ export default function PatientPortal() {
                   </button>
                 </>
               ) : (
-                <><Camera size={18} /> Tap to attach photo/video evidence</>
+                <><Camera size={18} /> {t('tapAttach')}</>
               )}
             </label>
 
@@ -441,17 +440,17 @@ export default function PatientPortal() {
             <button type="submit" className="portal-submit-btn" disabled={submitting}>
               {submitting ? (
                 <>
-                  <Loader size={24} className="spin-icon" /> TRANSMITTING SOS...
+                  <Loader size={24} className="spin-icon" /> {t('transmitting')}
                 </>
               ) : (
                 <>
-                  <AlertCircle size={24} /> SEND EMERGENCY SOS
+                  <AlertCircle size={24} /> {t('sendSOS')}
                 </>
               )}
             </button>
 
             <p className="portal-disclaimer">
-              This report will be sent immediately to the relevant {terms.label} staff on duty.
+              {t('disclaimer')} {terms.label} {t('staffOnDuty')}
             </p>
           </form>
         )}
@@ -460,7 +459,7 @@ export default function PatientPortal() {
       {/* ── Footer ── */}
       <footer className="portal-footer">
         <Clock size={12} />
-        Session active · {session.sessionCode}
+        {t('sessionActive')} · {session.sessionCode}
       </footer>
     </div>
   );

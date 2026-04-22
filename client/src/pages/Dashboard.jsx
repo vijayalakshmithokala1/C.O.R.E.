@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, Camera, BarChart2, CheckCircle, X, Phone } from 'lucide-react';
+import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, BarChart2, CheckCircle, X, Phone, Eye } from 'lucide-react';
 import io from 'socket.io-client';
 import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
 import API_BASE from '../utils/api';
@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
   const { terms, domain } = useDomain();
 
-  const [simulatingCamera, setSimulatingCamera] = useState(false);
+
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -89,26 +89,7 @@ export default function Dashboard() {
     }
   }
 
-  const triggerCameraAlert = async () => {
-    setSimulatingCamera(true);
-    try {
-       await fetch(`${API_BASE}/api/incident/system-alert`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-            domain: user.domain,
-            cameraLocation: 'Lobby',
-            eventType: 'Fire',
-            confidence: 82
-         })
-       });
-       alert('AI Camera detection triggered successfully.');
-    } catch(e) {
-       console.error(e);
-    } finally {
-       setSimulatingCamera(false);
-    }
-  };
+
 
   if (!user) return <div className="auth-wrapper"><h2 className="auth-title">Connecting...</h2></div>;
 
@@ -186,6 +167,9 @@ export default function Dashboard() {
               <Link to="/dashboard/analytics" className={`nav-link ${location.pathname === '/dashboard/analytics' ? 'active' : ''}`}>
                 <BarChart2 size={18} /> Analytics
               </Link>
+              <Link to="/dashboard/cameras" className={`nav-link ${location.pathname === '/dashboard/cameras' ? 'active' : ''}`}>
+                <Eye size={18} /> AI Cameras
+              </Link>
             </>
           )}
         </nav>
@@ -234,11 +218,7 @@ export default function Dashboard() {
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
 
-          {(user.role === 'Security' || user.role === 'Administrator' || user.role === 'Hotel Manager' || user.role === 'Duty Manager' || user.role === 'Admin') && (
-            <button style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', backgroundColor: '#3b82f6', color: 'white' }} onClick={triggerCameraAlert} disabled={simulatingCamera}>
-              <Camera size={18} /> Simulate AI Camera
-            </button>
-          )}
+
 
           <button className="danger" style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }} onClick={sendEmergencyBuzz}>
             <AlertTriangle size={18} /> 🚨 Send Emergency Alert
@@ -258,6 +238,7 @@ export default function Dashboard() {
           <Route path="/settings" element={<AdminDashboard section="settings" user={user} />} />
           <Route path="/audit" element={<AdminDashboard section="audit" user={user} />} />
           <Route path="/analytics" element={<AdminDashboard section="analytics" user={user} />} />
+          <Route path="/cameras" element={<AdminDashboard section="cameras" user={user} />} />
         </Routes>
       </main>
     </div>

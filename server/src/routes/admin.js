@@ -69,6 +69,12 @@ router.post('/resources', async (req, res) => {
 router.post('/staff', async (req, res) => {
   const { username, password, name, role, floors } = req.body;
   
+  // Validate mandatory floor assignment for non-admin roles
+  const floorRequiredRoles = ['Doctor', 'Nurse', 'Receptionist', 'Maintenance', 'Security', 'Operations', 'Help Desk', 'Information', 'Front Desk'];
+  if (floorRequiredRoles.includes(role) && (!floors || floors.trim().length === 0)) {
+    return res.status(400).json({ error: 'Floor assignment is mandatory for this role.' });
+  }
+
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) return res.status(400).json({ error: 'Username taken' });
 

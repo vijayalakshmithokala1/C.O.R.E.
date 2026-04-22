@@ -14,7 +14,7 @@ const DOMAINS = {
     receptionist: 'Receptionist',
     discharge: 'Discharge',
     discharging: 'Discharging',
-    floors: ['Emergency', 'ICU', 'Ward A', 'Ward B', 'OPD']
+    floors: ['Ground Floor', 'Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5']
   },
   HOTEL: {
     label: 'Hotel',
