@@ -11,7 +11,14 @@ export default function AdminDashboard({ section, user }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const { isHotel, terms, domain: currentDomain, DOMAINS } = useDomain();
-  const [role, setRole] = useState(terms.doctor);
+  
+  const getDefaultRole = () => {
+    if (currentDomain === 'HOTEL') return 'Hotel Manager';
+    if (currentDomain === 'AIRPORT') return 'Duty Manager';
+    if (currentDomain === 'MALL') return 'Admin';
+    return 'Administrator';
+  };
+  const [role, setRole] = useState(getDefaultRole());
   const [selectedFloors, setSelectedFloors] = useState([]);
   const [simulatingSensor, setSimulatingSensor] = useState(false);
   const [floorError, setFloorError] = useState('');
@@ -95,7 +102,10 @@ export default function AdminDashboard({ section, user }) {
       });
       if(res.ok) {
         const newUser = await res.json();
-        setData([...data, { ...newUser, name, createdAt: new Date() }]);
+        setData(prevData => {
+          const arr = Array.isArray(prevData) ? prevData : [];
+          return [...arr, { ...newUser, name, floors: selectedFloors.join(', '), createdAt: new Date() }];
+        });
         setUsername(''); setPassword(''); setName(''); setSelectedFloors([]);
       } else {
         const err = await res.json();
@@ -248,7 +258,7 @@ export default function AdminDashboard({ section, user }) {
                 </tr>
               </thead>
               <tbody>
-                {data?.map(u => (
+                {Array.isArray(data) && data.map(u => (
                   <tr key={u.id}>
                     <td>{u.name}</td>
                     <td className="mono">{u.username}</td>
