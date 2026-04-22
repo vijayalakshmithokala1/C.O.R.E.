@@ -14,7 +14,7 @@ from services.pii_service import redact_pii, get_redaction_summary
 from services.ai_service import (
     summarize_document, legal_chat, translate_text, 
     generate_action_items, draft_letter, find_lawyer_advice,
-    analyze_risk, extract_deadlines, compare_documents, research_legal_topic
+    analyze_risk, extract_deadlines, negotiate_clause, simulate_what_if
 )
 
 document_bp = Blueprint("document", __name__)
@@ -95,16 +95,24 @@ def upload_and_summarize():
         
         # Extract risk level from the first line (e.g., "RISK: [MEDIUM]")
         risk_level = "LOW"
+        risk_score = "N/A"
         summary = full_res
-        if full_res.startswith("RISK:"):
-            lines = full_res.split("\n", 1)
-            risk_line = lines[0].replace("RISK:", "").strip()
-            risk_level = risk_line.replace("[", "").replace("]", "").strip()
-            summary = lines[1].strip() if len(lines) > 1 else full_res
+        
+        lines = full_res.split("\n")
+        remaining_lines = []
+        for line in lines:
+            if line.startswith("RISK:"):
+                risk_level = line.replace("RISK:", "").replace("[", "").replace("]", "").strip()
+            elif line.startswith("RISK SCORE:"):
+                risk_score = line.replace("RISK SCORE:", "").replace("[", "").replace("]", "").strip()
+            else:
+                remaining_lines.append(line)
+        summary = "\n".join(remaining_lines).strip()
 
         return jsonify({
             "summary": summary,
             "risk_level": risk_level,
+            "risk_score": risk_score,
             "redacted_text": redacted_text[:8000],   # For chat context
             "token_map": token_map,                  # Sent to client for UI restoration
             "redaction_stats": redaction_stats,
@@ -188,16 +196,24 @@ def analyze_direct_text():
         
         # Extract risk level
         risk_level = "LOW"
+        risk_score = "N/A"
         summary = full_res
-        if full_res.startswith("RISK:"):
-            lines = full_res.split("\n", 1)
-            risk_line = lines[0].replace("RISK:", "").strip()
-            risk_level = risk_line.replace("[", "").replace("]", "").strip()
-            summary = lines[1].strip() if len(lines) > 1 else full_res
+        
+        lines = full_res.split("\n")
+        remaining_lines = []
+        for line in lines:
+            if line.startswith("RISK:"):
+                risk_level = line.replace("RISK:", "").replace("[", "").replace("]", "").strip()
+            elif line.startswith("RISK SCORE:"):
+                risk_score = line.replace("RISK SCORE:", "").replace("[", "").replace("]", "").strip()
+            else:
+                remaining_lines.append(line)
+        summary = "\n".join(remaining_lines).strip()
 
         return jsonify({
             "summary": summary,
             "risk_level": risk_level,
+            "risk_score": risk_score,
             "redacted_text": text[:8000],
             "filename": filename,
             "char_count": len(text),
@@ -286,28 +302,28 @@ def extract_deadlines_action():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@document_bp.route("/compare", methods=["POST"])
+@document_bp.route("/negotiate", methods=["POST"])
 @require_auth
-def compare_action():
+def negotiate_action():
     data = request.get_json() or {}
-    text_a = data.get("text_a", "").strip()
-    text_b = data.get("text_b", "").strip()
-    if not text_a or not text_b: return jsonify({"error": "Two documents required for comparison."}), 400
+    text = data.get("redacted_context", "").strip()
+    if not text: return jsonify({"error": "No context provided."}), 400
     try:
         if _is_rate_limited(g.current_user.id): return jsonify({"error": "Rate limited."}), 429
-        return jsonify({"result": compare_documents(text_a, text_b)})
+        return jsonify({"result": negotiate_clause(text)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@document_bp.route("/research", methods=["POST"])
+@document_bp.route("/what-if", methods=["POST"])
 @require_auth
-def research_action():
+def what_if_action():
     data = request.get_json() or {}
-    query = data.get("query", "").strip()
-    if not query: return jsonify({"error": "No query provided."}), 400
+    text = data.get("redacted_context", "").strip()
+    scenario = data.get("scenario", "").strip()
+    if not text or not scenario: return jsonify({"error": "Context and scenario required."}), 400
     try:
         if _is_rate_limited(g.current_user.id): return jsonify({"error": "Rate limited."}), 429
-        return jsonify({"result": research_legal_topic(query)})
+        return jsonify({"result": simulate_what_if(text, scenario)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

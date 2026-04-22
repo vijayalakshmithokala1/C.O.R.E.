@@ -13,12 +13,7 @@ export default function Dashboard({ user, onLogout, apiBase }) {
   const [uploadStep, setUploadStep] = useState(-1);
   const [uploadError, setUploadError] = useState('');
   
-  const [compareResult, setCompareResult] = useState(null);
-  const [compareA, setCompareA] = useState(null);
-  const [compareB, setCompareB] = useState(null);
-  
-  const [researchQuery, setResearchQuery] = useState('');
-  const [researchResult, setResearchResult] = useState('');
+
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [redactedDocContext, setRedactedDocContext] = useState('');
@@ -126,23 +121,16 @@ export default function Dashboard({ user, onLogout, apiBase }) {
                   .then(res => res.json())
                   .then(draftData => {
                     if (!draftData.answer) throw new Error("Drafting failed.");
-                    setTimeout(() => {
-                      fetch(`${apiBase}/document/analyze`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-                        body: JSON.stringify({ text: draftData.answer, filename: t.name, pii_found: false })
-                      })
-                      .then(res => res.json())
-                      .then(summaryData => {
-                        handleDocumentReady(summaryData);
-                        setUploadStep(3);
-                      })
-                      .catch(e => {
-                         console.error("Analysis error", e);
-                         setUploadError("Analysis failed. Try again.");
-                         setUploadStep(-1);
-                      });
-                    }, 500);
+                    const draftedResult = {
+                      summary: draftData.answer,
+                      risk_level: "LOW",
+                      redacted_text: draftData.answer,
+                      filename: t.name,
+                      char_count: draftData.answer.length,
+                      pii_found: false
+                    };
+                    handleDocumentReady(draftedResult);
+                    setUploadStep(3);
                   })
                   .catch(err => {
                     console.error("Drafting error", err);
@@ -163,85 +151,6 @@ export default function Dashboard({ user, onLogout, apiBase }) {
               </div>
             ))}
           </div>
-        </div>
-      );
-    }
-
-    if (activeNav === 'compare') {
-      return (
-        <div style={{ padding: '1rem' }}>
-          <h3 style={{ marginBottom: '1rem' }}>🔄 Version Comparison</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Select two processed documents to analyze variations.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div>
-               <p style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>DOCUMENT A</p>
-               <select className="form-input" onChange={(e) => setCompareA(recentDocs.find(d => d.id === parseInt(e.target.value)))}>
-                 <option value="">Select Document...</option>
-                 {recentDocs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-               </select>
-            </div>
-            <div>
-               <p style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>DOCUMENT B</p>
-               <select className="form-input" onChange={(e) => setCompareB(recentDocs.find(d => d.id === parseInt(e.target.value)))}>
-                 <option value="">Select Document...</option>
-                 {recentDocs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-               </select>
-            </div>
-          </div>
-          <button className="btn-gold" style={{ marginTop: '1.5rem', width: '100%', padding: '0.75rem' }} disabled={isProcessing || !compareA || !compareB} onClick={() => {
-               setIsProcessing(true);
-               fetch(`${apiBase}/document/compare`, {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-                 body: JSON.stringify({ text_a: compareA.result.redacted_text, text_b: compareB.result.redacted_text })
-               })
-               .then(res => res.json())
-               .then(data => { setCompareResult(data.result); setIsProcessing(false); });
-          }}> {isProcessing ? 'Analyzing...' : 'Analyze Differences'} </button>
-          {compareResult && (
-            <div style={{ marginTop: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h4 style={{ margin: 0 }}>📊 Comparison Results</h4>
-                <button className="btn-ghost" style={{ fontSize: '0.8rem' }} onClick={() => handleDownloadPDF("Comparison", compareResult)}>💾 Save as PDF</button>
-              </div>
-              <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid var(--gold)', background: 'rgba(212, 175, 55, 0.05)' }}>
-                 <p style={{ whiteSpace: 'pre-wrap', fontSize: '1rem', lineHeight: 1.8 }}>{compareResult}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (activeNav === 'research') {
-      return (
-        <div style={{ padding: '1rem' }}>
-          <h3 style={{ marginBottom: '0.5rem' }}>🔍 Legal Research Lab</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Search Indian legal code and landmark cases.</p>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <input className="form-input" placeholder="Search sections or case names..." value={researchQuery} onChange={(e) => setResearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isProcessing && document.getElementById('research-btn').click()} />
-            <button id="research-btn" className="btn-gold" disabled={isProcessing || !researchQuery.trim()} onClick={() => {
-                setIsProcessing(true);
-                fetch(`${apiBase}/document/research`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-                  body: JSON.stringify({ query: researchQuery })
-                })
-                .then(res => res.json())
-                .then(data => { setResearchResult(data.result); setIsProcessing(false); });
-            }}> {isProcessing ? 'Searching...' : 'Search Lab'} </button>
-          </div>
-          {researchResult && (
-            <div style={{ marginTop: '2rem' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <p style={{ margin: 0, fontWeight: 600 }}>📜 Research Result</p>
-                  <button className="btn-ghost" style={{ fontSize: '0.8rem' }} onClick={() => handleDownloadPDF("Research", researchResult)}>💾 Save as PDF</button>
-               </div>
-               <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)' }}>
-                  <p style={{ whiteSpace: 'pre-wrap', fontSize: '1rem', lineHeight: 1.8 }}>{researchResult}</p>
-               </div>
-            </div>
-          )}
         </div>
       );
     }
@@ -275,7 +184,7 @@ export default function Dashboard({ user, onLogout, apiBase }) {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onLoadDoc={(doc) => { setActiveNav('dashboard'); loadRecentDoc(doc); setIsSidebarOpen(false); }} 
-        onNavChange={(nav) => { setActiveNav(nav); setCompareResult(null); setResearchResult(null); setIsSidebarOpen(false); }} 
+        onNavChange={(nav) => { setActiveNav(nav); setIsSidebarOpen(false); }} 
       />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
         <Navbar user={user} onLogout={onLogout} onMenuClick={() => setIsSidebarOpen(true)} />

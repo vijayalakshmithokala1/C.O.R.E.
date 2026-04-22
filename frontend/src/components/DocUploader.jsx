@@ -255,12 +255,22 @@ export default function DocUploader({
                     };
                     const style = colors[level] || colors.LOW;
                     return (
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '20px',
-                        fontSize: '0.7rem', fontWeight: 800, background: style.bg, color: style.text, border: `1px solid ${style.border}`
-                      }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.text, boxShadow: `0 0 8px ${style.text}` }}></span>
-                        RISK: {level}
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '20px',
+                          fontSize: '0.7rem', fontWeight: 800, background: style.bg, color: style.text, border: `1px solid ${style.border}`
+                        }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: style.text, boxShadow: `0 0 8px ${style.text}` }}></span>
+                          RISK: {level}
+                        </div>
+                        {result.risk_score && result.risk_score !== "N/A" && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', padding: '4px 10px', borderRadius: '20px',
+                            fontSize: '0.7rem', fontWeight: 800, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border)'
+                          }}>
+                            SCORE: {result.risk_score}/10
+                          </div>
+                        )}
                       </div>
                     );
                  })()}

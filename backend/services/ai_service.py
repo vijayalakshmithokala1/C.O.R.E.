@@ -27,6 +27,7 @@ STRICT RULES:
 4. Always structure your response exactly like this:
 
 RISK: [LOW/MEDIUM/HIGH/CRITICAL]
+RISK SCORE: [X/10]
 
 📋 WHAT IS THIS DOCUMENT?
 (1–2 simple sentences explaining what type of document this is and its basic purpose)
@@ -56,12 +57,6 @@ STRICT RULES:
 2. State WHO is responsible for doing WHAT by WHEN.
 3. Cite the page number using the [--- PAGE X ---] markers.
 4. If no deadlines are found, state "No critical deadlines found." """
-
-COMPARE_SYSTEM_PROMPT = """You are a legal contract negotiator. You have been given two versions of a document (Version A and Version B).
-STRICT RULES:
-1. Compare the two versions and highlight the KEY DIFFERENCES in legal liability, obligations, or rights.
-2. Explain how these changes impact the user in plain English.
-3. Keep it concise. Focus only on the changes that matter."""
 
 CHAT_SYSTEM_PROMPT = """You are SmartLaw AI — a friendly, knowledgeable legal assistant that helps ordinary people understand Indian law.
 
@@ -109,14 +104,19 @@ STRICT RULES:
 3. Provide general advice on where to look in India (e.g., "Check with the District Legal Services Authority (DLSA) for free aid" or "Look for lawyers practicing at your local District Court").
 4. Keep it short and encouraging."""
 
-RESEARCH_SYSTEM_PROMPT = """You are a senior Indian Legal Researcher. Your job is to provide clear, accurate, and structured insights into specific laws, sections, or case law precedents.
+NEGOTIATION_SYSTEM_PROMPT = """You are an AI Negotiation Assistant. Your job is to help users safely push back on unfair or risky clauses in a contract to reduce their liability.
 STRICT RULES:
-1. Break down the legal text into simple, understandable terms.
-2. Provide a "General Meaning" section first.
-3. Provide a "Key Highlights / Conditions" section.
-4. Mention at least one landmark Case Law / Precedent if applicable (e.g., "Kesavananda Bharati vs. State of Kerala").
-5. Explain the "Punishment / Consequence" if it's a criminal section.
-6. Always include the disclaimer: "⚖️ For official legal purposes, consult the latest Bare Act or a licensed advocate." """
+1. Identify the most heavily one-sided or risky clauses in the provided text.
+2. Provide actionable advice on how to negotiate each clause. Give a specific "What to say" example.
+3. Keep the tone professional, objective, and strategic.
+4. Format using clean markdown bullet points."""
+
+WHAT_IF_SYSTEM_PROMPT = """You are a Legal Scenario Simulator. The user will provide a contract and a hypothetical "What if" scenario. Your job is to predict the legal consequences based *strictly* on the text of the contract.
+STRICT RULES:
+1. Answer what would happen in the scenario based purely on the contract rules.
+2. Cite the relevant clause or section if possible.
+3. Clearly state the consequences (e.g., penalties, termination rights, liability).
+4. If the contract doesn't explicitly mention the scenario, state that it is a "Gray Area" and explain the general legal default if applicable."""
 
 # ──────────────────────────────────────────────
 #  Service Functions
@@ -170,10 +170,12 @@ def extract_deadlines(text: str) -> str:
     user_content = f"Extract all deadlines and obligations from this document:\n\n{text[:14000]}"
     return _get_api_response(DEADLINE_SYSTEM_PROMPT, user_content)
 
-def compare_documents(text_a: str, text_b: str) -> str:
-    user_content = f"Compare these two document versions:\n\n--- VERSION A ---\n{text_a[:7000]}\n\n--- VERSION B ---\n{text_b[:7000]}"
-    return _get_api_response(COMPARE_SYSTEM_PROMPT, user_content)
+def negotiate_clause(text: str) -> str:
+    user_content = f"Analyze this document and suggest how I can negotiate to reduce my liability:\n\n{text[:14000]}"
+    return _get_api_response(NEGOTIATION_SYSTEM_PROMPT, user_content)
 
-def research_legal_topic(query: str) -> str:
-    user_content = f"Research the following Indian legal topic, section, or case law: {query}"
-    return _get_api_response(RESEARCH_SYSTEM_PROMPT, user_content, temperature=0.3)
+def simulate_what_if(text: str, scenario: str) -> str:
+    user_content = f"Based on this document, simulate the consequences of the following scenario: '{scenario}'\n\nDocument:\n{text[:10000]}"
+    return _get_api_response(WHAT_IF_SYSTEM_PROMPT, user_content, temperature=0.3)
+
+

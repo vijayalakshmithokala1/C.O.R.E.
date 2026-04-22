@@ -9,8 +9,7 @@ export default function QuickActions({ token, apiBase, redactedContext, summaryT
   
   const [selectedLang, setSelectedLang] = useState('Hindi');
   const [draftIntent, setDraftIntent] = useState('');
-  
-  const compareFileRef = useRef();
+  const [whatIfScenario, setWhatIfScenario] = useState('');
 
   const handleAction = async (actionPath, payload, typeName) => {
     setLoadingAction(actionPath);
@@ -42,54 +41,6 @@ export default function QuickActions({ token, apiBase, redactedContext, summaryT
     }
   };
 
-  const handleCompareUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setLoadingAction('compare');
-    setError(null);
-    
-    try {
-      // 1. Upload the second file to get its redacted text
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const uploadRes = await fetch(`${apiBase}/document/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to process comparison version.');
-      
-      // 2. Run the compare
-      const res = await fetch(`${apiBase}/document/compare`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          text_a: redactedContext, 
-          text_b: uploadData.redacted_text 
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Comparison failed');
-      
-      setActionResults(prev => [{
-        id: Date.now(),
-        type: `📑 Changes vs ${file.name}`,
-        text: data.result
-      }, ...prev]);
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoadingAction(null);
-      if (compareFileRef.current) compareFileRef.current.value = '';
-    }
-  };
-
   const removeResult = (id) => {
     setActionResults(prev => prev.filter(r => r.id !== id));
   };
@@ -114,15 +65,15 @@ export default function QuickActions({ token, apiBase, redactedContext, summaryT
             </button>
 
             {/* Deadline Extractor */}
-            <button className="dropdown-item" style={{ borderBottom: '1px solid var(--border)' }} disabled={loadingAction} onClick={() => handleAction('extract-deadlines', { redacted_context: redactedContext }, '📅 Deadlines & Obligations')}>
-              📅 Extract Deadlines
+            <button className="dropdown-item" disabled={loadingAction} onClick={() => handleAction('extract-deadlines', { redacted_context: redactedContext }, '📅 Obligations & Deadlines')}>
+              📅 Obligation Tracker
             </button>
 
-            {/* Version Compare */}
-            <button className="dropdown-item" disabled={loadingAction} onClick={() => compareFileRef.current?.click()}>
-              📑 Compare with new version
+            {/* Negotiation Assistant */}
+            <button className="dropdown-item" style={{ borderBottom: '1px solid var(--border)' }} disabled={loadingAction} onClick={() => handleAction('negotiate', { redacted_context: redactedContext }, '🤝 Negotiation Strategy')}>
+              🤝 Negotiation Assistant
             </button>
-            <input type="file" ref={compareFileRef} style={{display: 'none'}} onChange={handleCompareUpload} accept=".pdf,.doc,.docx" />
+
 
             {/* Translate */}
             <div className="dropdown-keep-open" style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '0.5rem' }}>
@@ -159,6 +110,23 @@ export default function QuickActions({ token, apiBase, redactedContext, summaryT
                   onClick={() => handleAction('draft-letter', { redacted_context: redactedContext, intent: draftIntent }, '📝 Draft Letter')}
               >
                  Draft It
+              </button>
+            </div>
+
+            {/* What-If Simulator */}
+            <div className="dropdown-keep-open" style={{ padding: '0.5rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
+              <p style={{ margin: '0 0 0.5rem', fontWeight: 600, fontSize: '0.85rem' }}>🧪 What-if Simulator</p>
+              <input 
+                  type="text" className="form-input" placeholder="e.g. Payment is delayed by 30 days"
+                  style={{ width: '100%', marginBottom: '0.5rem', padding: '0.4rem' }}
+                  value={whatIfScenario} onChange={e => setWhatIfScenario(e.target.value)}
+              />
+              <button 
+                  className="btn-ghost" style={{ width: '100%', padding: '0.4rem' }}
+                  disabled={!whatIfScenario || loadingAction} 
+                  onClick={() => handleAction('what-if', { redacted_context: redactedContext, scenario: whatIfScenario }, `🧪 Scenario: ${whatIfScenario}`)}
+              >
+                 Simulate Consequence
               </button>
             </div>
 

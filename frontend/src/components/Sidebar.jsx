@@ -44,20 +44,8 @@ export default function Sidebar({ user, activeNav = 'dashboard', recentDocs = []
           <span>📚</span> Legal Library
         </div>
 
-        <div 
-          className={`sidebar-link ${activeNav === 'compare' ? 'active' : ''}`}
-          onClick={() => onNavChange && onNavChange('compare')}
-        >
-          <span>🔄</span> Version Compare
-        </div>
 
-        <div 
-          className={`sidebar-link ${activeNav === 'research' ? 'active' : ''}`}
-          onClick={() => onNavChange && onNavChange('research')}
-        >
-          <span>🔍</span> Research Lab
-        </div>
-        
+
         <div 
           className="sidebar-link" 
           onClick={() => setShowRecent(!showRecent)}
