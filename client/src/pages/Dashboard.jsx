@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, BarChart2, CheckCircle, X, Phone, Eye } from 'lucide-react';
+import { LogOut, Activity, Users, Settings, UserPlus, AlertTriangle, Shield, Moon, Sun, AlertCircle, BarChart2, CheckCircle, X, Phone } from 'lucide-react';
 import io from 'socket.io-client';
 import { playEmergencyBuzzAlarm, playIncidentAlarm, unlockAudio, stopEmergencyBuzzAlarm } from '../utils/alarm';
 import API_BASE from '../utils/api';
@@ -167,9 +167,6 @@ export default function Dashboard() {
               <Link to="/dashboard/analytics" className={`nav-link ${location.pathname === '/dashboard/analytics' ? 'active' : ''}`}>
                 <BarChart2 size={18} /> Analytics
               </Link>
-              <Link to="/dashboard/cameras" className={`nav-link ${location.pathname === '/dashboard/cameras' ? 'active' : ''}`}>
-                <Eye size={18} /> AI Cameras
-              </Link>
             </>
           )}
         </nav>
@@ -238,7 +235,6 @@ export default function Dashboard() {
           <Route path="/settings" element={<AdminDashboard section="settings" user={user} />} />
           <Route path="/audit" element={<AdminDashboard section="audit" user={user} />} />
           <Route path="/analytics" element={<AdminDashboard section="analytics" user={user} />} />
-          <Route path="/cameras" element={<AdminDashboard section="cameras" user={user} />} />
         </Routes>
       </main>
     </div>

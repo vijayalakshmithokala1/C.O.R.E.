@@ -16,22 +16,7 @@ export default function AdminDashboard({ section, user }) {
   const [simulatingSensor, setSimulatingSensor] = useState(false);
   const [floorError, setFloorError] = useState('');
   
-  // Vision AI State — dynamically generated from domain floors
-  const domainFloors = DOMAINS[currentDomain]?.floors || [];
-  const [cctvFeeds, setCctvFeeds] = useState([]);
-  const [detectionLog, setDetectionLog] = useState([]);
 
-  // Initialize CCTV feeds from domain floors
-  useEffect(() => {
-    const feeds = domainFloors.map((floor, idx) => ({
-      id: idx + 1,
-      name: floor,
-      active: true,
-      status: 'Normal',
-      lastEvent: null,
-    }));
-    setCctvFeeds(feeds);
-  }, [currentDomain]);
 
   const [geofenceLat, setGeofenceLat] = useState(0);
   const [geofenceLng, setGeofenceLng] = useState(0);
@@ -77,46 +62,7 @@ export default function AdminDashboard({ section, user }) {
     }
   }, [section, user]);
 
-  const triggerIoTSensor = async (type, location) => {
-    setSimulatingSensor(true);
-    try {
-      const feed = cctvFeeds.find(f => f.name === location);
-      await fetch(`${API_BASE}/api/incident/system-alert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          domain: currentDomain,
-          cameraLocation: location,
-          eventType: type,
-          confidence: 98,
-          zone: 'General'
-        })
-      });
-      
-      // Add to detection log
-      const logEntry = {
-        id: Date.now(),
-        time: new Date().toLocaleTimeString(),
-        camera: location,
-        type: type,
-        confidence: 98,
-        status: 'Incident Created'
-      };
-      setDetectionLog(prev => [logEntry, ...prev].slice(0, 20));
-      
-      if (feed) {
-        setCctvFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, status: 'Alert', lastEvent: type } : f));
-        // Keep alert visible for 10 seconds
-        setTimeout(() => {
-          setCctvFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, status: 'Normal' } : f));
-        }, 10000);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSimulatingSensor(false);
-    }
-  };
+
 
   // Floor checkbox toggle
   const toggleFloor = (floor) => {
@@ -409,147 +355,7 @@ export default function AdminDashboard({ section, user }) {
         </>
       )}
 
-      {/* ── AI Cameras Dedicated Section ── */}
-      {section === 'cameras' && (
-        <>
-          <h1 style={{ marginBottom: '0.5rem' }}>AI-Powered Surveillance System</h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-            Simulates AI-powered CCTV cameras across the {terms.label.toLowerCase()}. When "Test Detection" is clicked, 
-            the AI vision system creates a real incident alert that is <strong>immediately broadcasted to all staff</strong> on the Incident Feed.
-          </p>
 
-          {/* Status Bar */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-            <div className="panel" style={{ flex: 1, minWidth: '160px', textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>{cctvFeeds.length}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Cameras</div>
-            </div>
-            <div className="panel" style={{ flex: 1, minWidth: '160px', textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: cctvFeeds.some(f => f.status === 'Alert') ? 'var(--accent-red)' : 'var(--text-muted)' }}>
-                {cctvFeeds.filter(f => f.status === 'Alert').length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Alerts</div>
-            </div>
-            <div className="panel" style={{ flex: 1, minWidth: '160px', textAlign: 'center', marginBottom: 0 }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{detectionLog.length}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Detections Today</div>
-            </div>
-          </div>
-
-          {/* Camera Grid */}
-          <div className="panel" style={{ marginBottom: '2rem', border: '1px solid rgba(59, 130, 246, 0.3)', background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>Live CCTV Monitor — {terms.label}</h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Each camera maps to a {terms.label.toLowerCase()} floor. Triggering detection creates a real incident.</p>
-              </div>
-              <span className="tag status-Resolved" style={{ animation: 'pulse 2s infinite' }}>✓ AI ACTIVE</span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-              {cctvFeeds.map(feed => (
-                <div key={feed.id} style={{ background: '#0f172a', borderRadius: '12px', overflow: 'hidden', border: feed.status === 'Alert' ? '2px solid var(--accent-red)' : '1px solid var(--panel-border)', position: 'relative', transition: 'border-color 0.3s ease' }}>
-                  {/* Camera Header */}
-                  <div style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>CAM_{feed.id}: {feed.name}</span>
-                    <span style={{ fontSize: '0.65rem', color: feed.status === 'Alert' ? 'var(--accent-red)' : 'var(--success)' }}>
-                      {feed.status === 'Alert' ? '🔴 ALERT' : '🟢 Normal'}
-                    </span>
-                  </div>
-                  
-                  {/* Mock Video Feed */}
-                  <div style={{ height: '180px', background: '#000', backgroundImage: `url(${feed.status === 'Alert' ? (feed.lastEvent === 'Fire' ? '/cctv_fire.png' : '/cctv_threat.png') : '/cctv_normal.png'})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'red', animation: 'blink 1s infinite', marginTop: '2px' }} />
-                      <span style={{ fontSize: '0.6rem', color: 'white', fontWeight: 'bold' }}>REC</span>
-                    </div>
-                    {feed.status === 'Alert' ? (
-                      <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.7)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-red)' }}>
-                         <div style={{ color: 'var(--accent-red)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.5rem', animation: 'pulse 1s infinite' }}>
-                           {feed.lastEvent === 'Fire' ? '🔥 FIRE DETECTED' : '🚨 THREAT DETECTED'}
-                         </div>
-                         <div style={{ color: 'var(--accent-amber)', fontSize: '0.7rem' }}>Incident auto-created → Staff notified</div>
-                      </div>
-                    ) : (
-                      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textAlign: 'center', background: 'rgba(0,0,0,0.4)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-                        <div style={{ letterSpacing: '2px' }}>[ MONITORING ]</div>
-                        <div style={{ fontSize: '0.6rem', marginTop: '0.3rem' }}>No anomalies detected</div>
-                      </div>
-                    )}
-                    {/* Scanline overlay */}
-                    <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(rgba(0,0,0,0) 0, rgba(0,0,0,0.15) 1px, transparent 2px)', pointerEvents: 'none' }} />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ padding: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      disabled={simulatingSensor}
-                      onClick={() => triggerIoTSensor('Fire', feed.name)}
-                      className="primary" 
-                      style={{ flex: 1, padding: '0.5rem', fontSize: '0.7rem', background: 'var(--accent-red)' }}
-                    >
-                      🔥 Test Fire
-                    </button>
-                    <button 
-                      disabled={simulatingSensor}
-                      onClick={() => triggerIoTSensor('Security Breach', feed.name)}
-                      style={{ flex: 1, padding: '0.5rem', fontSize: '0.7rem', background: '#1e293b', border: '1px solid var(--panel-border)', color: 'var(--text-main)' }}
-                    >
-                      🚨 Test Security
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Detection Log */}
-          {detectionLog.length > 0 && (
-            <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--panel-border)', fontWeight: 600, fontSize: '0.85rem' }}>
-                Detection Log
-              </div>
-              <table>
-                <thead style={{ background: '#1e293b' }}>
-                  <tr>
-                    <th>Time</th>
-                    <th>Camera</th>
-                    <th>Detection Type</th>
-                    <th>Confidence</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detectionLog.map(entry => (
-                    <tr key={entry.id}>
-                      <td style={{ fontSize: '0.8rem' }}>{entry.time}</td>
-                      <td className="mono" style={{ fontSize: '0.8rem' }}>{entry.camera}</td>
-                      <td>
-                        <span className="tag" style={{ background: entry.type === 'Fire' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: entry.type === 'Fire' ? 'var(--accent-red)' : 'var(--accent-amber)', border: 'none' }}>
-                          {entry.type === 'Fire' ? '🔥' : '🚨'} {entry.type}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 'bold', color: 'var(--accent-red)' }}>{entry.confidence}%</td>
-                      <td><span style={{ color: 'var(--success)', fontSize: '0.8rem' }}>✓ {entry.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* How it works */}
-          <div className="panel" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-            <h3 style={{ marginBottom: '0.75rem', color: 'var(--accent-blue)' }}>How Vision AI Works</h3>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-              <p><strong>1. Detection:</strong> AI-powered cameras continuously analyze video feeds for fire, smoke, and security threats.</p>
-              <p><strong>2. Incident Creation:</strong> When a threat is detected above the confidence threshold (95%), a new incident is automatically created in the system.</p>
-              <p><strong>3. Staff Notification:</strong> All on-duty staff instantly receive the alert on their Incident Feed with location details.</p>
-              <p><strong>4. Auto-Escalation:</strong> If no staff responds within 2 minutes, the system triggers an emergency buzz to all devices.</p>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
