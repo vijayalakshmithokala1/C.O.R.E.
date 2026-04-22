@@ -45,6 +45,14 @@ export default function ReceptionDashboard({ socket, user }) {
     const name = window.prompt(`Enter ${terms.patient} Name:`);
     if (name === null) return; // Cancelled
 
+    let finalName = name;
+    if (terms.label === 'Airport') {
+      const ticket = window.prompt(`Enter Ticket / PNR Number (Optional):`);
+      if (ticket) {
+        finalName = `${name} [PNR: ${ticket}]`;
+      }
+    }
+
     setCheckingIn(true);
     try {
       const res = await fetch(`${API_BASE}/api/session/checkin`, {
@@ -53,7 +61,7 @@ export default function ReceptionDashboard({ socket, user }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}` 
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: finalName }),
       });
       const data = await res.json();
       setSessions((prev) => [data, ...prev]);

@@ -258,9 +258,9 @@ router.post('/system-alert', async (req, res) => {
     const sysIncident = await prisma.incident.create({
        data: {
          type: eventType === 'Fire' ? 'Fire' : 'Security Breach',
-         description: `VISION AI ALERT: ${eventType} detected in ${cameraLocation}. Confidence: ${confidence}%. Immediate response recommended.`,
+         description: `VISION AI ALERT: ${eventType} detected at ${cameraLocation}. Confidence: ${confidence}%. Immediate response required.`,
          floor: cameraLocation,
-         sessionId: "SYSTEM_ALARM", 
+         sessionId: null,
          domain: domain,
          status: 'Pending',
          assignedToId: staffResponse ? staffResponse.id : null,

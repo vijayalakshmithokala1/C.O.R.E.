@@ -109,8 +109,14 @@ router.delete('/staff/:id', async (req, res) => {
 });
 
 router.get('/audit', async (req, res) => {
+  // Fetch logs that either belong to this domain's users OR have no user (system logs)
   const logs = await prisma.auditLog.findMany({
-    where: { user: { domain: req.user.domain } },
+    where: {
+      OR: [
+        { user: { domain: req.user.domain } },
+        { userId: null }
+      ]
+    },
     include: { user: { select: { name: true, role: true } } },
     orderBy: { timestamp: 'desc' },
     take: 100
