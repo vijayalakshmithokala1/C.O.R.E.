@@ -12,6 +12,7 @@ from routes.auth_routes import require_auth
 from services.extraction_service import extract_text, is_allowed
 from services.pii_service import redact_pii, get_redaction_summary
 from services.ai_service import (
+    summarize_document, legal_chat, translate_text,
     generate_action_items, draft_letter, find_lawyer_advice,
     analyze_risk, extract_deadlines, negotiate_clause, simulate_what_if,
     draft_legal_document

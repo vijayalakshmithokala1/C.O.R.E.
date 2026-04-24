@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import DocUploader from '../components/DocUploader';
+import ChatBox from '../components/ChatBox';
 
 export default function Dashboard({ user, onLogout, theme, toggleTheme, apiBase }) {
   const [activeNav, setActiveNav] = useState('dashboard');
@@ -134,10 +135,12 @@ export default function Dashboard({ user, onLogout, theme, toggleTheme, apiBase 
 
     if (activeNav === 'chat') {
       return (
-        <iframe 
-          src="/chat-embed" 
-          style={{ width: '100%', height: '100%', border: 'none', borderRadius: 'var(--radius-md)' }} 
-          title="AI Legal Assistant"
+        <ChatBox 
+          token={user?.token} 
+          apiBase={apiBase} 
+          redactedContext={redactedDocContext} 
+          recentDocs={recentDocs}
+          onSelectContext={setRedactedDocContext}
         />
       );
     }
