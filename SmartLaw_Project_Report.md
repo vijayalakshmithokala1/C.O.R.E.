@@ -117,10 +117,10 @@ Most existing tools do not focus on PII redaction as a core part of the inferenc
 | --- | --- |
 | **Operating System** | Windows 10/11, macOS, or Linux (Ubuntu) |
 | **Language** | Python 3.9+ (Backend) & JavaScript ES6+ (Frontend) |
-| **Framework** | Flask (Python Web Framework) |
+| **Framework** | Flask (Backend) and React (Frontend) |
 | **Database** | PostgreSQL (Relational Data Storage) |
 | **Web Server** | Gunicorn (for production deployment) |
-| **Frontend Tools** | React (JavaScript Library), HTML5, CSS3 |
+| **Tools** | Tesseract OCR and Groq API (Llama 3.3) |
 
 ### 3.2 Hardware Requirements
 | Requirement | Description |
