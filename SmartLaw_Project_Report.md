@@ -66,10 +66,11 @@ SmartLaw is a secure, privacy-first legal document management and analysis platf
    3.4 Functional Requirements
    3.5 Non-Functional Requirements
 4. **SYSTEM DESIGN**
-   4.0 Proposed System architecture
-   4.1 Proposed Methods/ Algorithms
-   4.2 Class / Use Case / Activity/ Sequence Diagrams
-   4.3 Datasets and Technology stack
+   4.0 Proposed System Architecture
+   4.1 System Modules
+   4.2 Proposed Methods/ Algorithms
+   4.3 Class / Use Case / Activity/ Sequence Diagrams
+   4.4 Datasets and Technology Stack
 5. **IMPLEMENTATION**
    5.1 Front page Screenshot
    5.2 Results and Discussions
@@ -165,10 +166,16 @@ Most existing tools do not focus on PII redaction as a core part of the inferenc
 
 ## 4. SYSTEM DESIGN
 
-### 4.0 Proposed System architecture
+### 4.0 Proposed System Architecture
 The system uses a distributed architecture. The React frontend handles the UI and client-side PII restoration. The Flask backend processes documents via OCR, manages the PII redaction logic, and communicates with the Groq AI API.
 
-### 4.1 Proposed Methods/ Algorithms (PII Redaction Flow)
+### 4.1 System Modules
+1.  **User Authentication & Dashboard Module**: Manages secure user access via JWT and provides the central interface for document management and analysis history.
+2.  **Intelligent Ingestion & OCR Module**: Handles multi-format file uploads and leverages Tesseract OCR to convert scanned legal documents into machine-readable text.
+3.  **Privacy-Preserving Analysis Module**: Implements the "Anonymized Inference" pipeline to redact PII and coordinates with AI models for risk auditing and summarization.
+4.  **Interactive Legal AI Module**: Powers the context-aware legal chatbot and automated contract drafting features for real-time document interaction.
+
+### 4.2 Proposed Methods/ Algorithms (PII Redaction Flow)
 1. **Extraction**: Tesseract OCR extracts text from PDF/Images.
 2. **Redaction**: Regex and NLP-based service identifies PAN, Aadhaar, Names, and Emails.
 3. **Mapping**: Real values are stored in a temporary map, replaced by tokens like `[PAN_1]`.
