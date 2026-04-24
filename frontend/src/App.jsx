@@ -25,9 +25,9 @@ export default function App() {
     return <ResetPasswordPage token={token} apiBase={BASE_URL} />;
   }
 
-  // ── Restore session from localStorage ──────
+  // ── Restore session from storage ──────
   useEffect(() => {
-    const stored = localStorage.getItem('smartlaw_user');
+    const stored = localStorage.getItem('smartlaw_user') || sessionStorage.getItem('smartlaw_user');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -47,14 +47,19 @@ export default function App() {
     }
   }, []);
 
-  const handleLogin = (userData) => {
+  const handleLogin = (userData, rememberMe) => {
     setUser(userData);
-    localStorage.setItem('smartlaw_user', JSON.stringify(userData));
+    if (rememberMe) {
+      localStorage.setItem('smartlaw_user', JSON.stringify(userData));
+    } else {
+      sessionStorage.setItem('smartlaw_user', JSON.stringify(userData));
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('smartlaw_user');
+    sessionStorage.removeItem('smartlaw_user');
   };
 
   if (loading) {

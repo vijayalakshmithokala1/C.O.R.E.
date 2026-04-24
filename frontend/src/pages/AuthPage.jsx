@@ -7,6 +7,7 @@ export default function AuthPage({ onLogin, apiBase }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Check URL params for verification success
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function AuthPage({ onLogin, apiBase }) {
         setForm({ name: '', email: '', password: '' });
       } else {
         // Normal login success
-        onLogin({ ...data.user, token: data.token });
+        onLogin({ ...data.user, token: data.token }, rememberMe);
       }
     } catch {
       setError('Cannot connect to server. Make sure the backend is running.');
@@ -219,6 +220,22 @@ export default function AuthPage({ onLogin, apiBase }) {
                   required
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                 />
+              </div>
+            )}
+
+            {/* Remember Me */}
+            {isLogin && !isForgot && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-0.5rem' }}>
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ cursor: 'pointer', accentColor: 'var(--gold-main)' }}
+                />
+                <label htmlFor="remember-me" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 500 }}>
+                  Remember me
+                </label>
               </div>
             )}
 
