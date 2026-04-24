@@ -8,10 +8,12 @@ A dissertation submitted to the Jawaharlal Nehru Technological University, Hyder
 
 Submitted by
 
-<Student Name> (<H.T.Number>)
-<Student Name> (<H.T.Number>)
-<Student Name> (<H.T.Number>)
-
+Thokala Vijaya Lakshmi (24B81A05R6)
+Thipparthi Srija Reddy (24B81A05Q5)
+Pakker Sanjana Reddy(24B81A05P4)
+Under the Guidance of
+Ms. G. Sushma
+Sr.Assistant Professor,
 **Department of Computer Science and Engineering**
 **CVR COLLEGE OF ENGINEERING**
 (An UGC Autonomous Institution, Affiliated to JNTUH, Accredited by NBA, and NAAC)
@@ -21,7 +23,7 @@ Vastunagar, Mangalpalli (V), Ibrahimpatnam (M), Ranga Reddy (Dist.) - 501510, Te
 
 ## CERTIFICATE
 
-This is to certify that the project work entitled **"SmartLaw: Production-Grade Legal AI Platform"** is being submitted by <Names of Student (Hall Ticket Numbers)> in partial fulfillment of the requirement for the award of the degree of Bachelor of Technology in Computer Science and Engineering, during the academic year 2025-2026.
+This is to certify that the project work entitled **"SmartLaw: "Legal Summarizer and AI ChatBot"** is being submitted by Thokala Vijaya Lakshmi, Thipparthi Srija Reddy and Pakker Sanjana Reddy in partial fulfillment of the requirement for the award of the degree of Bachelor of Technology in Computer Science and Engineering, during the academic year 2025-2026.
 
 **Professor-in-charge RFP**  
 **Professor and Head, CSE (Dr. A. Vani Vathsala)**
@@ -110,16 +112,25 @@ Most existing tools do not focus on PII redaction as a core part of the inferenc
 
 ## 3. REQUIREMENT ANALYSIS
 
-### 3.1 Software requirements
-- **Backend**: Flask (Python), Gunicorn, Docker.
-- **Frontend**: React 19, Vite, Tailwind CSS.
-- **Database**: PostgreSQL (Production), SQLite (Development).
-- **AI/ML**: Groq API (Llama 3.3 70B), Tesseract OCR.
-- **Storage**: Cloudinary API.
+### 3.1 Software Requirements
+| Requirement | Description |
+| --- | --- |
+| **Operating System** | Windows 10/11, macOS, or Linux (Ubuntu) |
+| **Language** | Python 3.9+ (Backend) & JavaScript ES6+ (Frontend) |
+| **Framework** | Flask (Python Web Framework) |
+| **Database** | PostgreSQL (Relational Data Storage) |
+| **Web Server** | Gunicorn (for production deployment) |
+| **Frontend Tools** | React (JavaScript Library), HTML5, CSS3 |
 
-### 3.2 Hardware requirements
-- **Client**: Any modern web browser with minimum 4GB RAM.
-- **Server (Deployment)**: 2 vCPU, 4GB RAM (Standard Render/Docker host).
+### 3.2 Hardware Requirements
+| Requirement | Description |
+| --- | --- |
+| **Processor** | Intel Core i5 or higher (minimum 2.4GHz) |
+| **RAM** | Minimum 8GB (16GB recommended) |
+| **Storage** | 256GB SSD (minimum 50GB free for DB/Logs) |
+| **Monitor** | HD Resolution (1920x1080) for UI development |
+| **Network** | High-speed internet for API sync |
+| **Graphics** | Integrated Graphics (Intel UHD or equivalent) |
 
 ### 3.3 User requirements
 - Secure authentication (JWT).
