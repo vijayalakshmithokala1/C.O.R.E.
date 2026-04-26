@@ -105,16 +105,17 @@ export default function AuthPage({ onLogin, apiBase }) {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h1 className="logo-text" style={{ fontSize: '2.6rem', lineHeight: 1 }}>
+          <h1 className="logo-text" style={{ fontSize: '2rem', lineHeight: 1.2 }}>
             SmartLaw
           </h1>
           <p style={{
-            color: 'var(--text-muted)',
-            fontSize: '0.875rem',
-            marginTop: '0.5rem',
-            letterSpacing: '0.05em'
+            color: 'var(--gold-main)',
+            fontSize: '0.8rem',
+            marginTop: '0.4rem',
+            letterSpacing: '0.04em',
+            fontWeight: 500
           }}>
-            Privacy-First Legal Intelligence
+            Legal Summarizer and AI ChatBot
           </p>
         </div>
 
@@ -290,7 +291,7 @@ export default function AuthPage({ onLogin, apiBase }) {
 
         {/* Footer */}
         <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          SmartLaw — Your legal documents, explained simply.
+          SmartLaw: Legal Summarizer and AI ChatBot
         </p>
       </div>
     </div>
