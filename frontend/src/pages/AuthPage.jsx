@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function AuthPage({ onLogin, apiBase }) {
+export default function AuthPage({ onLogin, apiBase, serverReady }) {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -119,7 +119,28 @@ export default function AuthPage({ onLogin, apiBase }) {
           </p>
         </div>
 
-        {/* Card */}
+        {/* Server warm-up notice */}
+          {!serverReady && (
+            <div className="fade-up" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              background: 'rgba(59,130,246,0.08)',
+              border: '1px solid rgba(59,130,246,0.2)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.6rem 0.875rem',
+              fontSize: '0.78rem',
+              color: '#93C5FD',
+              marginBottom: '1.25rem',
+            }}>
+              <span style={{ display: 'flex', gap: 3 }}>
+                <span className="pulse-dot" style={{ width: 6, height: 6, background: '#3B82F6' }} />
+                <span className="pulse-dot" style={{ width: 6, height: 6, background: '#3B82F6' }} />
+                <span className="pulse-dot" style={{ width: 6, height: 6, background: '#3B82F6' }} />
+              </span>
+              Connecting to server… this takes ~30s on first load.
+            </div>
+          )}
         <div className="glass-card" style={{ padding: '2.25rem' }}>
 
           {/* Tab Toggle */}
@@ -252,12 +273,14 @@ export default function AuthPage({ onLogin, apiBase }) {
               id="auth-submit"
               className="btn-gold"
               type="submit"
-              disabled={loading}
+              disabled={loading || !serverReady}
               style={{ padding: '0.85rem', fontSize: '0.9375rem', marginTop: '0.25rem' }}
             >
-              {loading
-                ? (isForgot ? 'Sending...' : (isLogin ? 'Signing in…' : 'Creating account…'))
-                : (isForgot ? 'Send Reset Link' : (isLogin ? 'Sign In' : 'Create Account'))}
+              {!serverReady
+                ? 'Server warming up…'
+                : loading
+                  ? (isForgot ? 'Sending...' : (isLogin ? 'Signing in…' : 'Creating account…'))
+                  : (isForgot ? 'Send Reset Link' : (isLogin ? 'Sign In' : 'Create Account'))}
             </button>
 
             {isForgot && (

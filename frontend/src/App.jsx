@@ -9,12 +9,30 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 export default function App() {
   const [user, setUser] = useState(null);       // { name, email, token }
   const [loading, setLoading] = useState(true); // check localStorage on mount
+  const [serverReady, setServerReady] = useState(false); // tracks backend warm-up
   const [theme, setTheme] = useState(() => localStorage.getItem('smartlaw_theme') || 'dark');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('smartlaw_theme', theme);
   }, [theme]);
+
+  // ── Wake up Render backend on page load ──────
+  // Render free tier sleeps after 15 min inactivity; cold start = ~50s.
+  // Pinging /health immediately gives the server time to wake while the
+  // user is still reading the page / typing credentials.
+  useEffect(() => {
+    const wake = async () => {
+      try {
+        await fetch(`${BASE_URL}/document/health`, { method: 'GET' });
+      } catch {
+        // Ignore errors — server may still be starting up
+      } finally {
+        setServerReady(true);
+      }
+    };
+    wake();
+  }, []);
   
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
@@ -103,7 +121,7 @@ export default function App() {
       {user ? (
         <Dashboard user={user} onLogout={handleLogout} apiBase={BASE_URL} theme={theme} toggleTheme={toggleTheme} />
       ) : (
-        <AuthPage onLogin={handleLogin} apiBase={BASE_URL} />
+        <AuthPage onLogin={handleLogin} apiBase={BASE_URL} serverReady={serverReady} />
       )}
     </>
   );
