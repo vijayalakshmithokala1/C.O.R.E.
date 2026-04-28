@@ -23,7 +23,20 @@ export default function EvacuationDashboard({ socket }) {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const json = await res.json();
-      setEvData(json);
+      
+      // Fetch global headcount from config
+      const configRes = await fetch(`${API_BASE}/api/session/config`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const configJson = await configRes.json();
+      
+      setEvData({
+        ...json,
+        counts: {
+          ...json.counts,
+          globalEvacuated: configJson.evacuatedCount || 0
+        }
+      });
     } catch (err) {
       console.error('Evacuation fetch error:', err);
     } finally {
@@ -55,7 +68,24 @@ export default function EvacuationDashboard({ socket }) {
       });
     };
     socket.on('evacuation_updated', handler);
-    return () => socket.off('evacuation_updated', handler);
+    
+    socket.on('headcount_updated', ({ count }) => {
+      setEvData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          counts: {
+            ...prev.counts,
+            globalEvacuated: count
+          }
+        };
+      });
+    });
+
+    return () => {
+      socket.off('evacuation_updated', handler);
+      socket.off('headcount_updated');
+    };
   }, [socket]);
 
   const updateStatus = async (sessionId, evacuationStatus) => {
@@ -73,6 +103,23 @@ export default function EvacuationDashboard({ socket }) {
       console.error('Update error:', err);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const updateGlobalHeadcount = async (count) => {
+    if (count < 0) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/session/headcount`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ count })
+      });
+      if (!res.ok) throw new Error('Failed to update headcount');
+    } catch (err) {
+      console.error('Headcount update error:', err);
     }
   };
 
@@ -104,6 +151,34 @@ export default function EvacuationDashboard({ socket }) {
         <button onClick={() => fetchData(true)} disabled={refreshing} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--panel-bg)', border: '1px solid var(--panel-border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-main)' }}>
           <RefreshCw size={14} className={refreshing ? 'spin-icon' : ''} /> Refresh
         </button>
+      </div>
+
+      {/* Global Headcount Widget */}
+      <div className="panel" style={{ background: 'linear-gradient(135deg, var(--panel-bg) 0%, #0d2a1d 100%)', border: '1px solid rgba(34,197,94,0.3)', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🔢 Manual Headcount Tracking
+            </h3>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+              Total people confirmed evacuated / safe by first responders on the ground.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+             <button 
+               onClick={() => updateGlobalHeadcount((evData?.counts.globalEvacuated || 0) - 1)}
+               style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+             >-</button>
+             <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>{evData?.counts.globalEvacuated || 0}</div>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>Confirmed</div>
+             </div>
+             <button 
+               onClick={() => updateGlobalHeadcount((evData?.counts.globalEvacuated || 0) + 1)}
+               style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--success)', color: 'black', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+             >+</button>
+          </div>
+        </div>
       </div>
 
       {/* Progress Bar */}

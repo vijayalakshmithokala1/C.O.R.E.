@@ -77,6 +77,7 @@ model SystemConfig {
   geofenceLng    Float    @default(0)
   geofenceRadius Int      @default(200) // Default 200 meters
   domain         String   @default("HOSPITAL") // Optionally we can have separate configs, but ID=1 and ID=2 could be used. Let's rely on domain filtering.
+  evacuatedCount Int      @default(0)
 }
 
 model AuditLog {

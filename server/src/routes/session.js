@@ -13,8 +13,30 @@ router.get('/config', async (req, res) => {
   res.json({
     geofenceLat: config?.geofenceLat || 0,
     geofenceLng: config?.geofenceLng || 0,
-    geofenceRadius: config?.geofenceRadius || 200
+    geofenceRadius: config?.geofenceRadius || 200,
+    evacuatedCount: config?.evacuatedCount || 0
   });
+});
+
+// Update headcount (global stats)
+router.put('/headcount', authenticateToken, async (req, res) => {
+  const { count } = req.body;
+  const domain = req.user.domain || 'HOSPITAL';
+  
+  let config = await prisma.systemConfig.findFirst({ where: { domain } });
+  if (!config) {
+    config = await prisma.systemConfig.create({ 
+      data: { domain, evacuatedCount: parseInt(count) || 0 } 
+    });
+  } else {
+    config = await prisma.systemConfig.update({
+      where: { id: config.id },
+      data: { evacuatedCount: parseInt(count) || 0 }
+    });
+  }
+  
+  req.io.emit('headcount_updated', { domain, count: config.evacuatedCount });
+  res.json({ count: config.evacuatedCount });
 });
 
 // Check if a session is valid (public route for portal)

@@ -406,7 +406,14 @@ router.get('/responder/:token', async (req, res) => {
       take: 50
     });
 
-    res.json({ domain, incidents, generatedAt: new Date() });
+    const config = await prisma.systemConfig.findFirst({ where: { domain } });
+
+    res.json({ 
+      domain, 
+      incidents, 
+      evacuatedCount: config?.evacuatedCount || 0,
+      generatedAt: new Date() 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Responder feed error' });

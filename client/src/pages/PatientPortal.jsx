@@ -16,6 +16,8 @@ import {
   ChevronDown,
   Send,
   Loader,
+  Mic,
+  Square,
 } from 'lucide-react';
 import { playEmergencyBuzzAlarm, stopEmergencyBuzzAlarm, unlockAudio } from '../utils/alarm';
 import API_BASE from '../utils/api';
@@ -64,6 +66,9 @@ export default function PatientPortal() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackComment, setFeedbackComment] = useState('');
+  const [recording, setRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const mediaRecorderRef = useRef(null);
 
   // Video Triage
   const [streaming, setStreaming] = useState(false);
@@ -129,6 +134,34 @@ export default function PatientPortal() {
     socketRef.current.emit('incident_video_stop', { incidentId: activeIncident.id, domain: contextDomain });
   };
 
+  // ─── Audio Recording (Offline Voice SOS) ───────────────────────
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        setFile(new File([blob], `voice-report-${Date.now()}.webm`, { type: 'audio/webm' }));
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+    } catch (err) {
+      alert("Microphone access required for Voice SOS.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+      setRecording(false);
+    }
+  };
+
   // ─── Socket connection ──────────────────────────────────────────
   useEffect(() => {
     const socket = io(API_BASE, { transports: ['websocket'] });
@@ -176,11 +209,23 @@ export default function PatientPortal() {
         if (queue.length > 0) {
           for (let item of queue) {
             try {
-               await fetch(`${API_BASE}/api/incident`, {
+               const res = await fetch(`${API_BASE}/api/incident`, {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify(item)
+                 body: JSON.stringify({
+                   type: item.type,
+                   description: item.description,
+                   sessionId: item.sessionId,
+                   floor: item.floor
+                 })
                });
+               if (res.ok && item.fileData) {
+                 const created = await res.json();
+                 const blob = await (await fetch(item.fileData)).blob();
+                 const fd = new FormData();
+                 fd.append('media', blob, item.fileName || 'upload.webm');
+                 await fetch(`${API_BASE}/api/incident/${created.id}/media`, { method: 'POST', body: fd });
+               }
             } catch(e) { console.error('Failed to sync offline item', e); }
           }
           localStorage.removeItem('coreOfflineQueue');
@@ -296,7 +341,17 @@ export default function PatientPortal() {
     if (!navigator.onLine) {
        // OFFLINE QUEUE
        const queue = JSON.parse(localStorage.getItem('coreOfflineQueue') || '[]');
-       queue.push(payloadData);
+       
+       let fileData = null;
+       if (file) {
+         fileData = await new Promise((resolve) => {
+           const reader = new FileReader();
+           reader.onloadend = () => resolve(reader.result);
+           reader.readAsDataURL(file);
+         });
+       }
+
+       queue.push({ ...payloadData, fileData, fileName: file?.name });
        localStorage.setItem('coreOfflineQueue', JSON.stringify(queue));
        
        setActiveIncident({
@@ -495,20 +550,40 @@ export default function PatientPortal() {
               required 
             />
 
-            <div className="portal-section-label"><Camera size={14} /> {t('evidencePhoto')}</div>
-            <label className="portal-file-label">
-              <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files[0])} style={{ display: 'none' }} accept="image/*,video/*,audio/*" />
-              {file ? (
-                <>
-                  <FileText size={18} /> <span style={{ flex: 1 }}>{file.name}</span>
-                  <button type="button" className="portal-file-clear" onClick={(e) => { e.preventDefault(); setFile(null); fileInputRef.current.value = ''; }}>
-                    <X size={14} />
-                  </button>
-                </>
-              ) : (
-                <><Camera size={18} /> {t('tapAttach')}</>
-              )}
-            </label>
+            <div className="portal-section-label"><Camera size={14} /> {t('evidencePhoto')} / <Mic size={14} /> {t('voiceSos')}</div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <label className="portal-file-label" style={{ flex: 1 }}>
+                <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files[0])} style={{ display: 'none' }} accept="image/*,video/*,audio/*" />
+                {file && !recording ? (
+                  <>
+                    <FileText size={18} /> <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</span>
+                    <button type="button" className="portal-file-clear" onClick={(e) => { e.preventDefault(); setFile(null); fileInputRef.current.value = ''; }}>
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <><Camera size={18} /> {t('tapAttach')}</>
+                )}
+              </label>
+
+              <button 
+                type="button" 
+                onClick={recording ? stopRecording : startRecording}
+                className={recording ? 'danger pulse-new' : ''}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 1.25rem',
+                  borderRadius: '10px',
+                  background: recording ? 'var(--accent-red)' : 'rgba(255,255,255,0.05)',
+                  border: '1.5px solid ' + (recording ? 'var(--accent-red)' : 'rgba(255,255,255,0.1)'),
+                  color: recording ? 'white' : 'var(--text-muted)'
+                }}
+              >
+                {recording ? <Square size={20} /> : <Mic size={20} />}
+              </button>
+            </div>
 
             {formError && <div className="portal-form-error"><AlertTriangle size={16} /> {formError}</div>}
 

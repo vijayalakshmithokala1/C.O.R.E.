@@ -117,6 +117,7 @@ export default function FirstResponderPortal() {
 
       {/* Summary Bar */}
       <div style={styles.summaryBar}>
+        <SumCard label="GLOBAL EVACUATED" value={data.evacuatedCount || 0} color="#10b981" />
         <SumCard label="TOTAL ACTIVE" value={data.incidents.length} color="#3b82f6" />
         <SumCard label="CRITICAL" value={critical.length} color="#ef4444" />
         <SumCard label="MODERATE" value={moderate.length} color="#f59e0b" />
