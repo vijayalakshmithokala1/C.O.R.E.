@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   // Hospital: "Administrator", "Doctor", "Nurse", "Receptionist". Hotel: "Hotel Manager", "Security", "Maintenance", "Front Desk"
+  floors       String?  // JSON string or comma-separated
+  domain       String   @default("HOSPITAL") // "HOSPITAL" | "HOTEL"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  auditLogs    AuditLog[]
+  assignedIncidents Incident[]
+}
+
+model Session {
+  id           String      @id @default(uuid())
+  sessionCode  String      @unique // e.g. PAT-1234 or GST-1234
+  name         String?     // Patient or Guest Name
+  domain       String      @default("HOSPITAL")
+  active       Boolean     @default(true)
+  language     String      @default("en") // "en", "es", "hi", etc.
+  evacuationStatus String  @default("Unknown") // "Unknown"|"Safe"|"Evacuated"|"Unaccounted"
+  createdAt    DateTime    @default(now())
+  dischargedAt DateTime?
+  incidents    Incident[]
+}
+
+model Incident {
+  id               Int             @id @default(autoincrement())
+  type             String          
+  description      String
+  floor            String?         
+  uploadedMediaUrl String?
+  status           String          @default("Pending") // "Pending", "Reviewed", "In Progress", "Resolved"
+  severityScore    Int             @default(1) // 1-10
+  aiTriageInstructions String?     
+  sentiment        String?         
+  feedbackRating   Int?            
+  feedbackComment  String?         
+  suggestedResponse String?        // AI staff protocol recommendation
+  language         String          @default("en")
+  isDeleted        Boolean         @default(false)
+  sessionId        String?
+  session          Session?        @relation(fields: [sessionId], references: [id])
+  domain           String          @default("HOSPITAL")
+  assignedToId     Int?
+  assignedToName   String?
+  assignedTo       User?           @relation(fields: [assignedToId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Resource {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   // "AED", "Fire Extinguisher", "Stretcher", "First Aid Kit"
+  floor     String
+  lat       Float
+  lng       Float
+  domain    String   @default("HOSPITAL")
+  createdAt DateTime @default(now())
+}
+
+model SystemConfig {
+  id             Int      @id @default(autoincrement())
+  geofenceLat    Float    @default(0)
+  geofenceLng    Float    @default(0)
+  geofenceRadius Int      @default(200) // Default 200 meters
+  domain         String   @default("HOSPITAL") // Optionally we can have separate configs, but ID=1 and ID=2 could be used. Let's rely on domain filtering.
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action       String
+  details      String?
+  hash         String?   // SHA-256 hash of (action + details + prevHash)
+  previousHash String?   // Hash of the previous log entry
+  userId       Int?
+  user         User?     @relation(fields: [userId], references: [id])
+  timestamp    DateTime  @default(now())
+}

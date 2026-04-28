@@ -1,243 +1,272 @@
-# 🏛️ SmartLaw: Legal Summarizer and AI ChatBot
+# C.O.R.E. — Crisis Operations & Response Ecosystem
 
-SmartLaw is a secure legal document management and analysis platform that detects risks and generates actionable insights. Designed from the ground up prioritizing privacy, it ensures sensitive personal data is not exposed to third-party AI models.
-
-## ❗ Problem Statement
-Legal professionals handle highly sensitive documents containing personal identifiers (PAN, Aadhaar, etc.).
-Existing AI tools can expose this data to external models, creating serious privacy risks.
-
-## 💡 Solution
-SmartLaw is a privacy-first legal AI platform that analyzes documents, detects risks, and generates actionable insights—without exposing sensitive personal data to AI models.
-
-## 🌐 Live Deployment
-
-| Service | Link | Platform |
-|---------|------|----------|
-| 🖥️ **Frontend (App)** | [smart-law-kappa.vercel.app](https://smart-law-kappa.vercel.app/) | Vercel |
-| ⚙️ **Backend (API)** | [smartlaw-backend.onrender.com](https://smartlaw-backend.onrender.com/) | Render |
-
-> **💡 Presentation Tip:** Bookmark both links or open them in browser tabs before your demo starts. The Render backend may take ~30 seconds to wake up on first load (free tier cold start) — open it a minute early!
+> A real-time emergency incident management platform for hospitals and hotels.  
+> Staff manage incidents on a live dashboard. Patients/guests report emergencies via a QR code portal — no app required.
 
 ---
 
-## 🧪 Quick Demo Guide
-1. **Register/Login** via the frontend app.
-2. **Upload a sample document** (For the best experience, [download our Sample NDA](./sample-docs/) or use any standard corporate contract PDF).
-3. **Click "Analyze"** to process the document.
-4. **Try the features**:
-   - **Risk Audit**: Check the clause-level issues.
-   - **Summary**: Read the plain-English explanation.
-   - **Chat**: Ask specific questions about the document context.
+## 🏆 Why C.O.R.E. Wins (The "WOW" Factors)
+
+Judges naturally ask: *"Is this just another CRUD app?"*  
+**No. C.O.R.E. is incredibly smart and built for the real world.**
+
+- ⚡ **QR + Instant Onboarding:** Scan to report instantly. No app installation, no login required for guests/patients.
+- 🧠 **Smart Assignment Engine:** The system automatically routes incidents to the available staff member nearest to the crisis (e.g. same floor) while load balancing active incidents.
+- 🗺️ **Dynamic Location Handling:** Not just a fixed "Floor" dropdown. Our portal handles exact rooms, corridors, lobby areas, and manual location entries.
+- 📱 **Guest Live Feedback Loop:** The moment a staff member claims an incident, the patient's portal instantly displays *"Help is on the way. Assigned to: [Staff Name]"*. This provides absolute human-centric reassurance.
+- 📷 **AI Camera Detection Mockup:** Simulates real-time hardware integration where CCTV cameras identify threats (e.g., Fire, Security Breaches) and auto-create incident reports with confidence ratings.
+- 📊 **Real-time Analytics Dashboard:** Aggregates average response time, common issues, and active staff loads directly onto the admin dashboard for immediate insights.
 
 ---
 
-## 🌟 Project Highlights (Strengths)
-1. **💎 Strong Core Idea**: Solves a real legal-tech problem with privacy-first AI inference (custom PII redaction + client-side restoration).
-2. **🏗️ Distributed Architecture**: Dockerized backend, Gunicorn server, PostgreSQL production database, Cloudinary object storage, and separated frontend/backend deployments.
-3. **⚡ Clean Architecture Separation**: Highly modular backend setup (`routes/` for API, `services/` for business logic, independent OCR/AI logic).
-4. **🧠 Feature Depth**: Goes far beyond simple ChatGPT wrappers—delivers page-referenced risk auditing, actionable to-do generation, and targeted legal chat.
+## 🚨 The Core Problem
+
+## ✨ Features
+
+### 🏥 Multi-Domain Support
+- Runs in **Hospital mode** (Patients, Doctors, Nurses, Receptionists, Administrators) and **Hotel mode** (Guests, Security, Maintenance, Front Desk, Hotel Managers) from a single codebase
+- Domain-isolated data — hospital staff never see hotel incidents and vice versa
+
+### 📱 QR Code Patient/Guest Portal
+- Reception generates a unique QR code on check-in
+- Patient/guest scans it on their phone → opens a mobile-optimised portal (no login, no app)
+- **Geofence enforcement** — incident reports are only accepted within a configurable radius of the property
+- Incident types: Medical Emergency, Fire/Smoke, Security Breach, Maintenance Issue, Other
+- Optional photo/video evidence attachment
+
+### ⚡ Real-Time Incident Feed (Socket.io)
+- Incidents appear on staff dashboards **instantly** via WebSocket — no polling
+- Status updates (`Pending → In Progress → Resolved`) broadcast to all connected staff in real time
+- **Auto-escalation**: if any incident remains `Pending` for 2 minutes, a system-wide emergency buzz fires automatically
+
+### 🚨 Emergency Broadcast Buzz
+- Administrators can send a system-wide emergency alert to **all** staff and patient portals simultaneously (one click)
+- Fire incidents trigger an automatic buzz to all connected users
+- Plays a loud klaxon alarm on all devices
+
+### 🔐 Role-Based Access Control
+| Role | Access |
+|------|--------|
+| Administrator / Hotel Manager | Full access: staff management, audit logs, system config, all incidents |
+| Doctor / Nurse / Security | Assigned-floor incident feed |
+| Receptionist / Front Desk | Patient/guest check-in, QR generation, discharge |
+| Patient / Guest | QR portal only (no login required) |
+
+### 📋 Audit Trail
+- Every staff action (login, check-in, discharge, config change) is logged with timestamp and user
+- Admin-only audit log view
+
+### 🗺️ Geofence Configuration
+- Administrators set GPS coordinates and radius (metres) for their property
+- Portal blocks submissions from users outside the perimeter
 
 ---
 
-## 🚀 Core Philosophy: Privacy-First AI
-Legal documents contain highly sensitive identifiers (Aadhaar, PAN, etc.). SmartLaw is designed so that real identifiers never reach the AI models:
-- **Anonymized Inference**: PII is redacted before being sent to AI services. Sensitive identifiers are replaced with anonymous tokens.
-- **Secure Processing**: Documents are temporarily processed in a secure backend environment for extraction and OCR.
-- **Client-Side Restoration**: **PII mapping never leaves the browser and is not persisted server-side.** It remains strictly in the browser's volatile memory, enabling the UI to safely restore real values without the server or AI provider ever seeing them.
-  - *(Technical Validation: The PII map is stored in React state only and is not persisted to storage. The backend never receives the original text after redaction.)*
+## 🛠️ Tech Stack
 
-### 📄 How It Works (Concrete Example)
-**1. Original Document (Uploaded):**
-> *Client PAN is ABCDE1234F.*
-
-**2. Sent to AI (Cloud Backend):**
-> *Client PAN is [PAN_1].*
-
-**3. Restored on Frontend (Browser UI):**
-> *Client PAN is ABCDE1234F.*
-
-This architecture is designed to ensure your clients' sensitive information is never memorized or trained upon by external LLMs.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite, React Router v7 |
+| Backend | Node.js, Express v5 |
+| Database | PostgreSQL via **Neon** |
+| ORM | Prisma |
+| Real-time | Socket.io v4 |
+| Auth | JWT (jsonwebtoken) + bcryptjs |
+| File Uploads | Multer (local disk) |
+| UI Icons | Lucide React |
+| QR Codes | qrcode.react |
 
 ---
 
-## 🏗️ System Architecture
+## 📁 Project Structure
 
-```text
-       [ User Browser ]
-              ↓
-    [ React Frontend — Vercel ]
-    https://smart-law-kappa.vercel.app/
-              ↓
-    [ Flask API — Render / Docker / Gunicorn ]
-    https://smartlaw-backend.onrender.com/
-        ↙           ↓           ↘
-[ PostgreSQL ] [ Cloudinary ] [ Groq API ]
- (Neon DB)     (File Storage)  (Llama 3.3)
 ```
-
----
-
-## 🛠️ Technical Stack
-
-### **Backend (Python / Flask / Docker)**
-- **Framework**: Flask (Application Factory pattern).
-- **Server**: Pro-grade `Gunicorn` WSGI server.
-- **Database**: PostgreSQL (Production) with SQLite fallback (Development).
-- **Storage**: **Cloudinary** for persistent, cloud-based file management.
-- **OCR**: `Tesseract OCR` fully integrated via Docker system dependencies.
-- **Containerization**: The backend is containerized using Docker to ensure consistent deployment with system-level dependencies.
-- **AI**: **Groq API** (Llama 3.3 70B) for high-speed legal reasoning.
-
-### **Frontend (React / Vite / Vercel)**
-- **Framework**: React 19.
-- **Styling**: Tailwind CSS 4.0 + Custom Glassmorphism.
-- **Environment**: Dynamic API routing for Vercel deployment.
-
----
-
-## 📸 Implementation Screenshots
-
-### Dashboard
-*Dashboard overview displaying active legal documents and their basic metrics.*
-![Dashboard Screenshot](./frontend/src/assets/dashboard.png)
-
-### Risk Audit & PII Redaction
-*Risk audit highlighting clause-level issues with a PII redaction preview before AI processing.*
-![Analysis Screenshot](./frontend/src/assets/analysis.png)
-
----
-
-## ✨ Key Features & Capabilities (Aligned to Top-Tier Rubrics)
-
-### 1. 🔹 Core Features (The Foundation)
-- **📄 Multi-Format Uploads**: Robust ingestion of PDFs, DOCX, and scanned images (Tesseract OCR).
-- **✂️ Automatic Summarization**: Delivers both a quick "TL;DR" and section-wise breakdown of clauses, obligations, and terms.
-- **💬 Chat with Document**: Ask specific questions like *"What is the termination clause?"* directly against the uploaded text.
-- **🔍 Entity & PII Extraction**: Automatically detects and extracts sensitive parties, dates, and identifiers using our custom token-mapping engine.
-
-### 2. 🚀 Advanced AI Features (Where We Shine)
-- **🧠 Context-Aware Q&A**: The AI understands complex legal context (e.g., *"Who is liable in case of breach?"*), reasoning beyond basic keyword matching.
-- **⚖️ Clause Risk Detection**: Automatically flags 🚨 risky clauses, ❗ unusual conditions, and ⚠️ one-sided agreements, citing exact page numbers.
-- **🔁 Clause Simplification (Plain English Mode)**: Translates dense legal jargon ("Notwithstanding the aforementioned...") into simple, everyday language.
-- **🧾 Auto Contract Generator**: Users can input a simple intent (e.g., *"Freelance contract with payment terms"*) and instantly generate a custom legal draft compliant with Indian Law.
-
-### 3. 🎯 Smart UX Features (Designed for Judges & Users)
-- **🎨 Risk Color Coding**: Visual risk indicators (Green = Safe, Yellow = Caution, Red = Critical Risk) for instant visual feedback.
-- **⚡ Quick Actions**: One-click actions to translate summaries, generate To-Do lists, and draft reply letters instantly.
-
-### 4. 🌍 Real-world Legal Intelligence
-- **📚 Case Law & Compliance**: The Chatbot is trained to suggest relevant Indian case law precedents and adjust explanations based on Indian jurisdiction and the Contract Act.
-- **🧑‍⚖️ Jurisdiction-Aware**: Explanations are strictly bounded by Indian legal frameworks, ensuring high relevance for local users.
-
-### 5. 🔒 Security & Professional Features
-- **🛡️ Zero-Knowledge PII Pipeline**: Identifiers are stripped in the backend and restored *only* in the browser UI. The LLM never sees your real data.
-- **🔐 Enterprise-Grade Security**: JWT authentication, stateless processing, and HTTPS enforcement.
-
----
-
-## 🚧 Future "Wow" Roadmap (Upcoming)
-- **📊 Obligation Tracker**: A dynamic checklist extracting exactly "Who must do what" and "By When".
-- **🧠 AI Negotiation Assistant**: Proactive suggestions like *"You can negotiate this clause to reduce liability."*
-- **📉 Risk Score Dashboard**: A holistic 1-10 overall contract risk score.
-- **🌐 Multilingual Support**: Seamless translation of legal docs into Hindi and regional languages.
-- **🧪 "What-if" Simulations**: Enter scenarios like *"What if payment is delayed?"* to see modeled legal consequences.
-
----
-
-## 📡 API Overview
-
-A highly modular REST API powers the platform. Key endpoints include:
-
-- `POST /api/auth/register` - Create a new secured user account
-- `POST /api/auth/login` - Authenticate and receive a JWT
-- `GET /api/documents/<id>` - Retrieve document analysis and metadata
-
-### `POST /api/documents/upload`
-Securely uploads and processes a legal document.
-
-**Request:** `multipart/form-data`
-- `file`: The legal document (PDF, JPG, PNG).
-
-**Sample Response:**
-```json
-{
-  "message": "Document processed and analyzed successfully",
-  "document": {
-    "id": 101,
-    "pii_mapping": {"[PAN_1]": "ABCDE1234F"},
-    "analysis": {
-      "risks": [{ "clause": "Non-compete", "severity": "High" }]
-    }
-  }
-}
-```
-
----
-
-## 📂 Project Structure
-
-```text
-SmartLaw/
-├── backend/
-│   ├── app.py              # Application Factory (Postgres + CORS logic)
-│   ├── Dockerfile          # Production Build (Tesseract + Gunicorn)
-│   ├── requirements.txt    # Production dependencies
-│   ├── routes/
-│   │   ├── auth_routes.py  # JWT-based Auth
-│   │   └── document_routes.py # Cloud-based analysis logic
-│   └── services/
-│       ├── storage_service.py # Cloudinary & Temp Local Buffering
-│       ├── pii_service.py     # Regex-based PII Redaction
-│       ├── ai_service.py      # LLM Prompts & Integration
-│       └── extraction_service.py # PDF & OCR Logic
-├── frontend/
+Solution challenge/
+├── client/               # React + Vite frontend
 │   ├── src/
-│   │   └── App.jsx         # Dynamic API Routing
-│   └── vite.config.js
-└── smartlaw.db             # Local dev database (Fallback)
+│   │   ├── pages/
+│   │   │   ├── Landing.jsx          # Domain selector (Hospital / Hotel)
+│   │   │   ├── Login.jsx            # Staff login + first-time admin setup
+│   │   │   ├── Dashboard.jsx        # Main staff shell + nav + emergency buzz
+│   │   │   ├── MedicalDashboard.jsx # Live incident feed
+│   │   │   ├── ReceptionDashboard.jsx # Check-in, QR generation, discharge
+│   │   │   ├── AdminDashboard.jsx   # Staff management, config, audit logs
+│   │   │   └── PatientPortal.jsx    # QR web portal for patients/guests
+│   │   ├── context/
+│   │   │   ├── ThemeContext.jsx     # Dark/light mode
+│   │   │   └── DomainContext.jsx    # Hospital vs Hotel terminology
+│   │   └── utils/
+│   │       ├── api.js               # Central API base URL (VITE_API_URL)
+│   │       └── alarm.js             # Audio alarm engine
+│   └── .env                        # VITE_API_URL (not committed)
+│
+├── server/               # Node.js + Express backend
+│   ├── src/
+│   │   ├── index.js                 # Express app + Socket.io setup
+│   │   └── routes/
+│   │       ├── auth.js              # Login, admin setup, JWT middleware
+│   │       ├── admin.js             # Staff CRUD, config, audit logs
+│   │       ├── session.js           # Check-in, discharge, QR sessions
+│   │       └── incident.js          # Submit, fetch, update incidents
+│   ├── prisma/
+│   │   └── schema.prisma            # DB schema (PostgreSQL)
+│   ├── uploads/                    # Uploaded incident evidence (local)
+│   └── .env                        # DATABASE_URL, JWT_SECRET (not committed)
+│
+└── README.md
 ```
 
 ---
 
-## 📊 Performance Metrics
-- **Average OCR Time**: ~3–5 seconds per page *(Observed on Render free tier during testing)*.
-- **Average AI Response**: ~2–4 seconds per query *(Observed on Render free tier during testing)*.
-- **Capacity limits**: Up to 20 pages per document per request.
+## 🚀 Quick Start (Local Development)
+
+### Prerequisites
+- Node.js 18+
+- A [Neon](https://neon.tech) project (free tier works)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/your-username/c.o.r.e.git
+cd "Solution challenge"
+
+# Install server dependencies
+cd server && npm install
+
+# Install client dependencies
+cd ../client && npm install
+```
+
+### 2. Configure Environment
+
+**`server/.env`**
+```env
+PORT=5000
+DATABASE_URL="postgresql://user:password@ep-xxx-yyy.us-east-2.aws.neon.tech/neondb?sslmode=require"
+DIRECT_URL="postgresql://user:password@ep-xxx-yyy.us-east-2.aws.neon.tech/neondb?sslmode=require"
+JWT_SECRET="your-strong-secret-here"
+CLIENT_URL="http://localhost:5173"
+```
+
+> Get your Neon connection string from:  
+> **Neon Dashboard → Project → Connection Details**  
+> (Use the same connection string for both `DATABASE_URL` and `DIRECT_URL`)
+
+**`client/.env`**
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### 3. Push Database Schema
+
+```bash
+cd server
+npx prisma db push
+```
+
+### 4. Run the App
+
+```bash
+# Terminal 1 — Backend
+cd server
+npm run dev
+
+# Terminal 2 — Frontend
+cd client
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 5. First-Time Setup
+
+1. Go to `/login` and select your domain (Hospital or Hotel).
+2. Click **"First Time Setup?"** at the bottom.
+3. Create your Administrator account.
+4. Log in and start managing your system.
 
 ---
 
-## 🛡️ Security & Scalability
-- **Strict Data Privacy**: PII mapping is maintained purely in client-side memory (never in localStorage or DB).
-- **Authentication**: Stateless, time-limited JWT expiration strategy.
-- **Transport Security**: Strict HTTPS enforcement across Vercel (Frontend) and Render (Backend).
-- **Input Validation**: Strict server-side validation for file types (PDF, DOCX, Images) and file size (10MB limits).
-- **Safe Cleaning**: All temporary OCR buffers are securely deleted immediately after extraction.
-- **Database Scalability**: Native support for Render's `postgres://` to `postgresql://` URI mapping.
+## ☁️ Production Deployment
+
+### Backend → [Render](https://render.com)
+
+1. Create a new **Web Service** pointing to your GitHub repo.
+2. Set **Root Directory** to `Solution challenge/server`.
+3. Set **Build Command**: `npm install && npx prisma generate`
+4. Set **Start Command**: `node src/index.js`
+5. Add environment variables:
+   - `DATABASE_URL`
+   - `DIRECT_URL`
+   - `JWT_SECRET`
+   - `CLIENT_URL` → your Vercel frontend URL
+
+### Frontend → [Vercel](https://vercel.com)
+
+1. Import your GitHub repo.
+2. Set **Root Directory** to `Solution challenge/client`.
+3. Add environment variable:
+   - `VITE_API_URL` → your Render backend URL (e.g. `https://core-api.onrender.com`)
+4. Deploy.
 
 ---
 
-## 🧪 Deployment & Configuration
+## 🔌 API Reference
 
-### **Environment Variables**
-To deploy successfully, ensure the following variables are set:
-- `DATABASE_URL`: PostgreSQL connection string.
-- `GROQ_API_KEY`: Your Groq AI API key.
-- `CLOUDINARY_CLOUD_NAME`: Cloudinary account name.
-- `CLOUDINARY_API_KEY`: Cloudinary API key.
-- `CLOUDINARY_API_SECRET`: Cloudinary API secret.
-- `JWT_SECRET`: Secure string for token signing.
-- `CORS_ORIGINS`: Allowed frontend URL (e.g., `https://smartlaw.vercel.app`).
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/auth/setup-admin` | None | First-time admin creation |
+| `POST` | `/api/auth/login` | None | Staff login, returns JWT |
+| `GET` | `/api/session/session/:id` | None | Validate QR session (portal) |
+| `GET` | `/api/session/config` | None | Fetch geofence config (portal) |
+| `POST` | `/api/session/checkin` | JWT (Receptionist+) | Create patient/guest session |
+| `POST` | `/api/session/discharge/:id` | JWT (Receptionist+) | Deactivate session |
+| `GET` | `/api/session/sessions` | JWT | List all sessions (domain-scoped) |
+| `POST` | `/api/incident` | None | Submit incident from QR portal |
+| `GET` | `/api/incident` | JWT | Fetch incidents (role + domain filtered) |
+| `PUT` | `/api/incident/:id/status` | JWT | Update incident status |
+| `GET` | `/api/admin/staff` | JWT (Admin) | List all staff |
+| `POST` | `/api/admin/staff` | JWT (Admin) | Create staff account |
+| `DELETE` | `/api/admin/staff/:id` | JWT (Admin) | Remove staff account |
+| `GET` | `/api/admin/audit` | JWT (Admin) | View audit logs |
+| `GET` | `/api/admin/config` | JWT (Admin) | Get geofence config |
+| `PUT` | `/api/admin/config` | JWT (Admin) | Update geofence config |
 
-### **Platform Strategy**
-- **Backend**: Deploy `backend/` as a Docker web service on Render.
-- **Frontend**: Deploy `frontend/` to Vercel (set `VITE_API_BASE_URL` to the Render service URL).
+### Socket.io Events
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `join_room` | Client → Server | Join a domain/floor/role room |
+| `new_incident` | Server → Client | New incident submitted |
+| `incident_updated` | Server → Client | Incident status changed |
+| `buzz_triggered` | Client → Server | Staff triggers emergency broadcast |
+| `emergency_buzz` | Server → Client | Emergency alert to all devices |
+| `session_discharged` | Server → Client | Notifies portal that QR is deactivated |
 
 ---
 
-## ⚠️ Known Limitations & Testing
-- **Performance Limits**: OCR performance depends on server resources and may be slower on free-tier deployments. Large documents (>10MB) are restricted to ensure system stability. "Cold starts" on Render free tier may introduce initial request latency.
-- **Production Reliability**: Currently lacks an automated CI/CD pipeline. However, **strict manual end-to-end testing has been conducted across core workflows:**
-  - Auth flow (Registration & Login validation)
-  - Document Upload & Storage (Cloudinary integration)
-  - OCR extraction + AI reasoning pipeline
-- **Monitoring**: No centralized error monitoring (e.g., Sentry) or explicit rate-limiting middleware is present in this iteration.
+## 🗃️ Database Schema
+
+```
+User          — Staff accounts with role and domain
+Session       — Patient/guest QR sessions
+Incident      — Emergency reports linked to sessions
+SystemConfig  — Geofence settings per domain
+AuditLog      — Staff action history
+```
+
+---
+
+## 🔒 Security Notes
+
+- All staff routes are JWT-protected
+- Roles are verified on every request (`requireRole` middleware)
+- CORS is restricted to the configured `CLIENT_URL`
+- `.env` files are excluded from version control
+- Incident submissions from QR portals are validated against active sessions
+
+---
+
+## 📄 License
+
+MIT — Built for the Solution Challenge 2026.
