@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useDomain } from '../context/DomainContext';
-import { Building2, PlusSquare } from 'lucide-react';
+import { Building2, PlusSquare, Key } from 'lucide-react';
 
 export default function Landing() {
   const { setDomain } = useDomain();
@@ -11,6 +11,13 @@ export default function Landing() {
     navigate('/login');
   };
 
+  const demoAccounts = [
+    { domain: 'Hospital', user: 'hospadmin', pass: 'password123', role: 'Administrator', color: 'var(--accent-red)' },
+    { domain: 'Hotel', user: 'hoteladmin', pass: 'password123', role: 'Hotel Manager', color: 'var(--accent-amber)' },
+    { domain: 'Airport', user: 'airadmin2', pass: 'password123', role: 'Duty Manager', color: 'var(--accent-blue)' },
+    { domain: 'Mall', user: 'malladmin1', pass: 'password123', role: 'Mall Admin', color: 'var(--accent-purple)' },
+  ];
+
   return (
     <div className="landing-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-main)', padding: '2rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -18,7 +25,7 @@ export default function Landing() {
         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Crisis Operations & Response Ecosystem</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '4rem' }}>
         
         {/* Hospital Card */}
         <button 
@@ -68,6 +75,60 @@ export default function Landing() {
           <p>Crowd control, tenant safety, and lost & found coordination.</p>
         </button>
 
+      </div>
+
+      {/* Evaluator Access Section */}
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '1000px', 
+        padding: '2rem', 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        border: '1px solid var(--panel-border)',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
+          <Key size={32} color="var(--accent-blue)" />
+          <h2 style={{ fontSize: '1.8rem', letterSpacing: '1px' }}>Evaluator Access</h2>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+          {demoAccounts.map((acc) => (
+            <div key={acc.domain} style={{ 
+              padding: '1.25rem', 
+              background: 'var(--panel-bg)', 
+              borderRadius: '12px', 
+              border: `1px solid ${acc.color}44`,
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', background: `${acc.color}22`, borderRadius: '0 0 0 100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: acc.color }}></div>
+              </div>
+              
+              <h4 style={{ color: acc.color, marginBottom: '0.75rem', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{acc.domain}</h4>
+              
+              <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Role:</span>
+                  <span style={{ fontWeight: 600 }}>{acc.role}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>User:</span>
+                  <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{acc.user}</code>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Pass:</span>
+                  <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{acc.pass}</code>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <p style={{ marginTop: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          Select a sector card above, then use these credentials on the login page to access the administrative dashboards.
+        </p>
       </div>
     </div>
   );
