@@ -12,11 +12,16 @@ export default function Landing() {
   };
 
   const demoAccounts = [
-    { domain: 'Hospital', user: 'hospadmin', pass: 'password123', role: 'Administrator', color: 'var(--accent-red)' },
-    { domain: 'Hotel', user: 'hoteladmin', pass: 'password123', role: 'Hotel Manager', color: 'var(--accent-amber)' },
-    { domain: 'Airport', user: 'airadmin2', pass: 'password123', role: 'Duty Manager', color: 'var(--accent-blue)' },
-    { domain: 'Mall', user: 'malladmin1', pass: 'password123', role: 'Mall Admin', color: 'var(--accent-purple)' },
+    { domain: 'Hospital', domainKey: 'HOSPITAL', user: 'hospadmin', pass: 'password123', role: 'Administrator', color: 'var(--accent-red)' },
+    { domain: 'Hotel', domainKey: 'HOTEL', user: 'hoteladmin', pass: 'password123', role: 'Hotel Manager', color: 'var(--accent-amber)' },
+    { domain: 'Airport', domainKey: 'AIRPORT', user: 'airadmin2', pass: 'password123', role: 'Duty Manager', color: 'var(--accent-blue)' },
+    { domain: 'Mall', domainKey: 'MALL', user: 'malladmin1', pass: 'password123', role: 'Admin', color: 'var(--accent-purple)' },
   ];
+
+  const handleDemoLogin = (acc) => {
+    setDomain(acc.domainKey);
+    navigate('/login', { state: { user: acc.user, pass: acc.pass, role: acc.role } });
+  };
 
   return (
     <div className="landing-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-main)', padding: '2rem' }}>
@@ -94,14 +99,31 @@ export default function Landing() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
           {demoAccounts.map((acc) => (
-            <div key={acc.domain} style={{ 
-              padding: '1.25rem', 
-              background: 'var(--panel-bg)', 
-              borderRadius: '12px', 
-              border: `1px solid ${acc.color}44`,
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
+            <div 
+              key={acc.domain} 
+              onClick={() => handleDemoLogin(acc)}
+              className="landing-card-small"
+              style={{ 
+                padding: '1.25rem', 
+                background: 'var(--panel-bg)', 
+                borderRadius: '12px', 
+                border: `1px solid ${acc.color}44`,
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-5px)';
+                e.currentTarget.style.borderColor = acc.color;
+                e.currentTarget.style.boxShadow = `0 10px 20px -10px ${acc.color}66`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = `${acc.color}44`;
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
               <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', background: `${acc.color}22`, borderRadius: '0 0 0 100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: acc.color }}></div>
               </div>
@@ -121,6 +143,10 @@ export default function Landing() {
                   <span style={{ color: 'var(--text-muted)' }}>Pass:</span>
                   <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{acc.pass}</code>
                 </div>
+              </div>
+              
+              <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.7rem', color: acc.color, fontWeight: 700, textTransform: 'uppercase', opacity: 0.8 }}>
+                Click to Quick-Login
               </div>
             </div>
           ))}

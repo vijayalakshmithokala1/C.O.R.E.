@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { useDomain } from '../context/DomainContext';
 import API_BASE from '../utils/api';
@@ -12,6 +12,15 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isSetupMode, setIsSetupMode] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.user) setUsername(location.state.user);
+      if (location.state.pass) setPassword(location.state.pass);
+      if (location.state.role) setRole(location.state.role);
+    }
+  }, [location.state]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
