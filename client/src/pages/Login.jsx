@@ -10,7 +10,8 @@ export default function Login() {
   const { domain, setDomain, terms, DOMAINS } = useDomain();
   const [role, setRole] = useState(terms.doctor);
   const [error, setError] = useState('');
-  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [takingLonger, setTakingLonger] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,6 +26,8 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
+    const timer = setTimeout(() => setTakingLonger(true), 4000);
 
     // Quick switch to setup mode if needed (Demo purposes: if login fails normally on fresh install, user can create admin)
     if (isSetupMode) {
@@ -42,6 +45,10 @@ export default function Login() {
         setError('Admin created. Please log in.');
       } catch (err) {
         setError(err.message);
+      } finally {
+        clearTimeout(timer);
+        setIsLoading(false);
+        setTakingLonger(false);
       }
       return;
     }
@@ -61,6 +68,10 @@ export default function Login() {
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+    } finally {
+      clearTimeout(timer);
+      setIsLoading(false);
+      setTakingLonger(false);
     }
   };
 
@@ -138,8 +149,8 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button type="submit" className="primary" style={{ width: '100%' }}>
-            {isSetupMode ? 'Initialize Sector Admin' : 'Secure Access'}
+          <button type="submit" className="primary" style={{ width: '100%' }} disabled={isLoading}>
+            {isLoading ? (takingLonger ? 'Warming up Engine...' : 'Securing Access...') : (isSetupMode ? 'Initialize Sector Admin' : 'Secure Access')}
           </button>
         </form>
 
@@ -147,9 +158,11 @@ export default function Login() {
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: 'var(--text-muted)' }}>
             <ArrowLeft size={12} /> Exit Portal
           </Link>
-          <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setIsSetupMode(!isSetupMode)}>
-            {isSetupMode ? 'Back to Login' : 'First Time Setup?'}
-          </span>
+          {!isLoading && (
+            <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setIsSetupMode(!isSetupMode)}>
+              {isSetupMode ? 'Back to Login' : 'First Time Setup?'}
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -105,6 +105,12 @@ app.use('/api/evacuation', evacuationRoutes);
 app.use('/api/report', reportRoutes);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  try {
+    await prisma.$connect();
+    console.log('Successfully connected to the database.');
+  } catch (err) {
+    console.error('Initial database connection failed:', err.message);
+  }
 });
