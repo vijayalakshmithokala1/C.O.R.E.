@@ -16,14 +16,8 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onNeedRefresh() {
-      setNeedRefresh(true);
-    },
-  });
+  // PWA auto-updates silently in background (registerType: 'autoUpdate')
+  useRegisterSW();
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -41,32 +35,7 @@ function App() {
   // Global setup and routes
   return (
     <>
-      {needRefresh && (
-        <div style={{
-          background: 'var(--accent-blue)',
-          color: 'white',
-          textAlign: 'center',
-          padding: '0.75rem',
-          fontWeight: 'bold',
-          fontSize: '0.85rem',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10000,
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '1rem'
-        }}>
-          <span>🔄 A new version of C.O.R.E. is available.</span>
-          <button 
-            onClick={() => updateServiceWorker(true)}
-            style={{ background: 'white', color: 'var(--accent-blue)', border: 'none', padding: '0.25rem 0.75rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            Update Now
-          </button>
-        </div>
-      )}
+      {/* PWA auto-updates silently — no manual prompt needed */}
       {isOffline && (
         <div style={{
           background: '#ef4444',
